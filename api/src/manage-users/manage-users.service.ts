@@ -2,19 +2,18 @@ import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/commo
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '../auth/schemas/user.schema';
-import { PERMISSIONS } from '../auth/constants/permissions.constant';
 
 @Injectable()
 export class ManageUsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  private hasPermission(role: string, permission: string): boolean {
-    const permissions = PERMISSIONS[role] || [];
-    return permissions.includes(permission);
+  private hasPermission(user: { customPermissions?: Record<string, string[]> }, permission: string): boolean {
+    // Check if user has the required permission on the 'users' resource
+    return user.customPermissions?.['users']?.includes(permission) ?? false;
   }
 
-  async createUser(currentUser: { role: string }, userData: Partial<User>) {
-    if (!this.hasPermission(currentUser.role, 'write')) {
+  async createUser(currentUser: { customPermissions?: Record<string, string[]>; role: string }, userData: Partial<User>) {
+    if (!this.hasPermission(currentUser, 'write')) {
       throw new ForbiddenException('You do not have permission to create users');
     }
 
@@ -26,8 +25,8 @@ export class ManageUsersService {
     return user.save();
   }
 
-  async removeUser(currentUser: { role: string }, userId: string) {
-    if (!this.hasPermission(currentUser.role, 'delete')) {
+  async removeUser(currentUser: { customPermissions?: Record<string, string[]>; role: string }, userId: string) {
+    if (!this.hasPermission(currentUser, 'delete')) {
       throw new ForbiddenException('You do not have permission to remove users');
     }
 
@@ -43,8 +42,8 @@ export class ManageUsersService {
     return this.userModel.deleteOne({ _id: userId });
   }
 
-  async findAll(currentUser: { role: string }) {
-    if (!this.hasPermission(currentUser.role, 'read')) {
+  async findAll(currentUser: { customPermissions?: Record<string, string[]> }) {
+    if (!this.hasPermission(currentUser, 'read')) {
       throw new ForbiddenException('You do not have permission to view users');
     }
 

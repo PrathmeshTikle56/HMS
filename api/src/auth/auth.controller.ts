@@ -25,6 +25,7 @@ export class AuthController {
       userId: req.user.userId,
       email: req.user.email,
       role: req.user.role,
+      customPermissions: req.user.permissions, // Include custom resource-based permissions
     };
   }
 }

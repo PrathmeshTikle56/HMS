@@ -23,16 +23,16 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-
     const role = registerDto.role || 'Employee';
 
-    const permissions = PERMISSIONS[role] || PERMISSIONS['Employee'];
+    // Assign resource-based permissions
+    const customPermissions = PERMISSIONS[role] || {};
 
     const createdUser = new this.userModel({
       ...registerDto,
       password: hashedPassword,
       role,
-      permissions,
+      customPermissions,
     });
     return createdUser.save();
   }
@@ -55,7 +55,9 @@ export class AuthService {
       userId: user._id,
       email: user.email,
       role: user.role,
+      permissions: user.customPermissions, // Include resource-specific permissions in JWT
     };
+
     return {
       accessToken: this.jwtService.sign(payload),
     };

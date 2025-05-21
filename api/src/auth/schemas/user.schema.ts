@@ -17,6 +17,11 @@ export class User {
   @Prop({ default: 'Employee', enum: ['Admin', 'Manager', 'Employee'] })
   role: string;
 
+  @Prop({
+    type: Object,
+    default: {}, // Example: { users: ['read'], leaves: ['read', 'write'] }
+  })
+  customPermissions: Record<string, string[]>;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

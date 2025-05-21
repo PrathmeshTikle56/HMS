@@ -7,8 +7,9 @@ import { Attendance, AttendanceDocument } from './schemas/attendance.schema';
 export class AttendanceService {
   constructor(@InjectModel(Attendance.name) private attendanceModel: Model<AttendanceDocument>) {}
 
-  async markAttendance(user: { userId: string; role: string; permissions: string[] }, data: any) {
-    if (!user.permissions.includes('write')) {
+  async markAttendance(user: { userId: string; role: string; customPermissions: Record<string, string[]> }, data: any) {
+    // Check 'write' permission for 'attendance' resource
+    if (!user.customPermissions?.['attendance']?.includes('write')) {
       throw new ForbiddenException('You do not have permission to mark attendance');
     }
 
@@ -25,15 +26,18 @@ export class AttendanceService {
     return attendance.save();
   }
 
-  async getAttendance(user: { userId: string; role: string; permissions: string[] }) {
-    if (!user.permissions.includes('read')) {
+  async getAttendance(user: { userId: string; role: string; customPermissions: Record<string, string[]> }) {
+    // Check 'read' permission for 'attendance' resource
+    if (!user.customPermissions?.['attendance']?.includes('read')) {
       throw new ForbiddenException('You do not have permission to view attendance');
     }
 
-    if (user.role === 'Admin' || user.role === 'Manager') {
+    // If user has 'readAll' permission for attendance (e.g. Admin/Manager)
+    if (user.customPermissions['attendance'].includes('readAll')) {
       return this.attendanceModel.find().exec();
     }
 
+    // Otherwise, only fetch the user's own attendance
     return this.attendanceModel.find({ user: user.userId }).exec();
   }
 }
