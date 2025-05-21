@@ -1,6 +1,6 @@
 import React from "react";
 import { Users, Wallet, Mail, FileText, BriefcaseBusiness } from "lucide-react";
-import DashboardCard from "../components/DashboardCards/DashboardCrad";
+import DashboardCard from "../components/DashboardCards/DashboardCard";
 import { useAppSelector } from "../hooks/hooks";
 
 const AdminDashboard = () => {

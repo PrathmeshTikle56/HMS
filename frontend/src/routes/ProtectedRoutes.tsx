@@ -10,6 +10,7 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   allowedRoles,
+  
 }) => {
   const role = useAppSelector((state) => state.user.user?.role);
   console.log(role);
