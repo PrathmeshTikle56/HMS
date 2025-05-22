@@ -1,4 +1,12 @@
-import { IsString, IsEmail, IsNotEmpty, IsIn, MinLength } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsNotEmpty,
+  IsIn,
+  MinLength,
+  IsOptional,
+  IsObject,
+} from 'class-validator';
 
 export class RegisterDto {
   @IsString()
@@ -11,13 +19,17 @@ export class RegisterDto {
 
   @IsString()
   @IsNotEmpty()
+  @MinLength(6, { message: 'Password must be at least 6 characters long' })
   password: string;
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(6, { message: 'Password must be at least 6 characters long' })
   @IsIn(['Admin', 'Manager', 'Employee'], {
     message: 'Role must be Admin, Manager, or Employee',
   })
   role: string;
+
+  @IsOptional()
+  @IsObject({ message: 'Custom permissions must be an object' })
+  customPermissions?: Record<string, string[]>;
 }
