@@ -12,7 +12,10 @@ export class Leave {
   @Prop({ required: true })
   endDate: string;
 
-  @Prop({ default: 'Pending' })
+  @Prop({ required: true })
+  reason: string;
+
+  @Prop({ default: 'Pending', enum: ['Pending', 'Approved', 'Rejected'] })
   status: string;
 }
 
