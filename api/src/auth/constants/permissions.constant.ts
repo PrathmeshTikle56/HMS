@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 export const PERMISSIONS = {
   Admin: {
     users: ['read', 'write', 'update', 'delete'],
@@ -6,18 +5,18 @@ export const PERMISSIONS = {
     attendance: ['read', 'write', 'update', 'delete'],
   },
   Manager: {
-    users: ['read', 'write'], // Managers can only read/write user data
-    leaves: ['read', 'update'], // Managers can update leaves
-    attendance: ['read', 'write'], // Managers can mark attendance
+    users: ['read', 'write', 'delete'], 
+    leaves: ['read', 'update'], 
+    attendance: ['read', 'write'], 
   },
   HR: {
     users: ['read', 'write', 'update'], 
-    leaves: ['read', 'update', 'readAll'], 
+    leaves: ['read', 'update'], 
     attendance: ['read'], 
   },
   Employee: {
-    users: ['read'], // Employees can only read their own data
-    leaves: ['read', 'write'], // Employees can apply for leaves
-    attendance: ['read', 'write'], // Employees can mark attendance
+    users: ['read'], 
+    leaves: ['read', 'write'], 
+    attendance: ['read', 'write'], 
   },
 };
