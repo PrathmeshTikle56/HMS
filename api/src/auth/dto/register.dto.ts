@@ -24,8 +24,8 @@ export class RegisterDto {
 
   @IsString()
   @IsNotEmpty()
-  @IsIn(['Admin', 'Manager', 'Employee'], {
-    message: 'Role must be Admin, Manager, or Employee',
+  @IsIn(['Admin', 'Manager', 'HR', 'Employee'], {
+    message: 'Role must be Admin, Manager, HR, or Employee',
   })
   role: string;
 
