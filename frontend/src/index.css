@@ -7,3 +7,18 @@
   font-weight: 400;
   font-style: normal;
 }
+
+.bg-image{
+  background-image: linear-gradient(rgba(0, 0, 134, 0.722), rgba(0, 0, 134, 0.722)), url("../src/assets/loginBg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100vh;
+}
+.logo {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  height: 150px;
+  z-index: 50;
+}

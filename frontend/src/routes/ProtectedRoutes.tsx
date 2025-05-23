@@ -1,29 +1,23 @@
-import React from "react";
-import { useAppSelector } from "../hooks/hooks";
+// src/components/PrivateRoute.tsx
+import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  allowedRoles: string[];
-}
-
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+const ProtectedRoutes = ({
   children,
   allowedRoles,
-  
+}: {
+  children: JSX.Element;
+  allowedRoles?: string[];
 }) => {
-  const role = useAppSelector((state) => state.user.user?.role);
-  console.log(role);
+  const user = useSelector((state: any) => state.user.user);
 
-  if (!role) {
-    return <Navigate to="/login" />;
+  if (!user) return <Navigate to="/login" />;
+
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/unauthorized" />; // Optional page
   }
 
-  if (!allowedRoles.includes(role)) {
-    return <Navigate to="/unauthorized" />;
-  }
-
-  return <>{children}</>;
+  return children;
 };
 
-export default ProtectedRoute;
+export default ProtectedRoutes;

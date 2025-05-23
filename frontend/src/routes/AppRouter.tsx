@@ -1,54 +1,73 @@
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import Login from "../pages/LoginPage";
-import ProtectedRoute from "./ProtectedRoutes";
-import Layout from "../components/layout/commonLayout/commonLayout";
-import AdminLayout from "../components/layout/AdminLayout/AdminLayout";
+import {
+  Routes,
+  Route,
+  Navigate,
+  BrowserRouter,
+  Outlet,
+} from "react-router-dom";
 
-// Admin pages
+import Login from "../pages/LoginPage";
+import ProtectedRoutes from "../routes/ProtectedRoutes";
+import AdminLayout from "../components/layout/AdminLayout/AdminLayout";
+import EmployeeLayout from "../components/layout/employeeLayout/employeeLayout";
 import AdminDashboard from "../pages/AdminDashBoard";
-import UserManagement from "../pages/EmployeeManagement";
 import Attendance from "../pages/Attendance";
 import LeaveRequests from "../pages/LeaveManagement";
 import ApprovalHistory from "../pages/ApprovalHistory";
 import Profile from "../pages/ProfilePage";
+import Payroll from "../pages/Payroll";
+import Reports from "../pages/Reports";
+import EmployeeManagement from "../pages/EmployeeManagement";
+import EmployeeDashboard from "../pages/EmployeeDashboard";
+import EmployeeForm from "../components/Form/UserCreationForm/EmployeeForm/EmployeeForm";
 
-const AppRoutes = () => {
+const AppRouter = () => {
   return (
-    <Routes>
-      <Route path="/" element={<Login />} />
+    <BrowserRouter>
+      <Routes>
+        {/* Login Page */}
+        <Route path="/" element={<Login />} />
 
-      {/* Common layout for dashboard (if used for other roles) */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={["admin", "hr", "employee"]}>
-            <Layout />
-          </ProtectedRoute>
-        }
-      />
+        {/* Admin Routes */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoutes allowedRoles={["admin", "hr", "superadmin"]}>
+              <AdminLayout />
+            </ProtectedRoutes>
+          }
+        >
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="employee-management" element={<EmployeeManagement />} />
+          <Route path="add-employee" element={<EmployeeForm></EmployeeForm>}></Route>
+          <Route path="attendance" element={<Attendance />} />
+          <Route path="leave-requests" element={<LeaveRequests />} />
+          <Route path="approval-history" element={<ApprovalHistory />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="payroll" element={<Payroll />} />
+          <Route path="reports" element={<Reports />} />
+          
+        </Route>
 
-      {/* Admin layout routes */}
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute allowedRoles={["admin", "superadmin", "hr", "employee"]}>
-            <AdminLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<AdminDashboard />} />
-        <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="user-management" element={<UserManagement />} />
-        <Route path="attendance" element={<Attendance />} />
-        <Route path="leave-requests" element={<LeaveRequests />} />
-        <Route path="approval-history" element={<ApprovalHistory/>} />
-        <Route path="profile" element={<Profile />} />
-      </Route>
+        {/* Employee Routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoutes allowedRoles={["employee"]}>
+              <EmployeeLayout />
+            </ProtectedRoutes>
+          }
+        >
+          <Route index element={<EmployeeDashboard />} />
+        </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Catch all */}
+        <Route path="*" element={<Navigate to="/" />} />
+        
+      </Routes>
+    </BrowserRouter>
   );
 };
 
-export default AppRoutes;
+export default AppRouter;

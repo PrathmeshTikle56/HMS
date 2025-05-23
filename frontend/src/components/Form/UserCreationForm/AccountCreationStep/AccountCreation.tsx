@@ -1,6 +1,5 @@
 import React from "react";
 import { useFormContext } from "react-hook-form";
-import InputField from "../../../common/InputField";
 
 type FormValues = {
   email: string;
@@ -13,16 +12,19 @@ type Props = {
   defaultValues?: FormValues;
 };
 
-const UserAccountCreationForm: React.FC<Props> = () => {
+const UserAccountCreationForm: React.FC<Props> = ({ onSubmit, defaultValues }) =>  {
   const {
     register,
     formState: { errors },
-    setValue,
   } = useFormContext();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Email Field */}
       <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Email
+        </label>
         <input
           type="email"
           {...register("email", {
@@ -32,18 +34,19 @@ const UserAccountCreationForm: React.FC<Props> = () => {
               message: "Invalid email address",
             },
           })}
-          className="w-full border px-3 py-2 rounded"
+          className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         {errors.email && (
-          <p className="text-red-500 text-sm">
-            {errors.email.message as String}
-          </p>
+          <p className="text-sm text-red-500 mt-1">{errors.email.message as string}</p>
         )}
       </div>
 
+      {/* Password Field */}
       <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Password
+        </label>
         <input
-          label="Password"
           type="password"
           {...register("password", {
             required: "Password is required",
@@ -52,22 +55,21 @@ const UserAccountCreationForm: React.FC<Props> = () => {
               message: "Password must be at least 6 characters",
             },
           })}
-          className="w-full border px-3 py-2 rounded"
+          className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         {errors.password && (
-          <p className="text-red-500 text-sm">
-            {errors.password.message as String}
-          </p>
+          <p className="text-sm text-red-500 mt-1">{errors.password.message as string}</p>
         )}
       </div>
 
+      {/* Role Selection */}
       <div>
-        <label className="block mb-1">Role</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Role
+        </label>
         <select
-          {...register("role", {
-            required: "Role is required",
-          })}
-          className="w-full border px-3 py-2 rounded"
+          {...register("role", { required: "Role is required" })}
+          className="w-full border border-gray-300 px-4 py-2 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Select Role</option>
           <option value="admin">Admin</option>
@@ -75,9 +77,7 @@ const UserAccountCreationForm: React.FC<Props> = () => {
           <option value="user">Employee</option>
         </select>
         {errors.role && (
-          <p className="text-red-500 text-sm">
-            {errors.role.message as String}
-          </p>
+          <p className="text-sm text-red-500 mt-1">{errors.role.message as string}</p>
         )}
       </div>
     </div>

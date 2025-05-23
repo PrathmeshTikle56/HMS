@@ -1,82 +1,125 @@
-import React, { useState } from "react";
-import { Menu, X, Bell, Mail, Settings } from "lucide-react";
-import { Link, Outlet } from "react-router-dom";
-import { EmployeeNavLink } from "./EmployeeInterface";
+import React from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import {
+  LayoutDashboard,
+  UserCheck,
+  CalendarCheck,
+  Clock,
+  User,
+  LogOut,
+  Bell,
+  Mail,
+  Search,
+} from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "../../../feature/user/userSlice";
+import { RootState } from "../../../store/store";
+import profileImage from "../../../assets/user-alt.svg";
 
 const EmployeeLayout: React.FC = () => {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const user = useSelector((state: RootState) => state.user.user);
 
-  const navLinks: EmployeeNavLink[] = [
-    { label: "Dashboard", path: "dashboard" },
-    { label: "Profile", path: "profile" },
-    { label: "Leaves", path: "leaves" },
-    { label: "Payroll", path: "payroll" },
-    { label: "Attendance", path: "attendance" },
+  const role = user?.role || "employee";
+  const name = user?.name || "Employee";
+
+  const sidebarLinks = [
+    { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+    { label: "Attendance", path: "/attendance", icon: UserCheck },
+    { label: "Leave Requests", path: "/leave-requests", icon: CalendarCheck },
+    { label: "Approval History", path: "/approval-history", icon: Clock },
+    { label: "Profile", path: "/profile", icon: User },
   ];
-  return (
-    <>
-      <header className="bg-white shadow-md fixed top-0 w-full z-50">
-        <div className="px-4 sm:px-6 lg:px-12">
-          <div className="flex items-center justify-between h-20">
-            <div className="text-xl font-semibold text-blue-600">
-              <Link to="/">Startappss Portal</Link>
-            </div>
-            <nav className="hidden md:flex space-x-8">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.label}
-                  to={`/employee/${link.path.toLowerCase()}`}
-                  className="text-gray-700 hover:text-blue-600 font-medium transition duration-200"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
 
-            <div className="flex items-center space-x-20">
-              <div className="hidden md:flex space-x-10 text-gray-600">
-                <Bell className="bg-hover:text-blue-600 cursor-pointer" />
-                <Mail className="hover:text-blue-600 cursor-pointer" />
-                <Settings className="hover:text-blue-600 cursor-pointer" />
-              </div>
-              <div className="md:hidden">
-                <button
-                  onClick={() => setIsOpen(!isOpen)}
-                  className="text-gray-800 focus:outline-none"
-                >
-                  {isOpen ? <X size={24} /> : <Menu size={24} />}
-                </button>
-              </div>
-            </div>
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/");
+  };
+
+  return (
+    <div className="flex h-screen bg-[#f4f6fa]">
+      {/* Sidebar */}
+      <aside className="w-72 bg-[#0f172a] text-white flex flex-col p-5 shadow-lg">
+        
+        {/* Logo */}
+        <div className="flex justify-center mb-3">
+          <img src="/logo.jpg" alt="Logo" className="w-30 bg-amber-50 " />
+        </div>
+
+        {/* Profile Info */}
+        <div className="flex items-center gap-4 p-3 bg-[#1e293b] rounded-xl mb-6 shadow">
+          <img
+            src={user?.profileImage || profileImage}
+            alt="Profile"
+            className="w-14 h-14 rounded-full object-cover border-2 border-yellow-500"
+          />
+          <div className="flex flex-col">
+            <span className="text-lg font-semibold capitalize">{name}</span>
+            <span className="text-sm text-gray-300 capitalize">{role}</span>
           </div>
         </div>
-        {/* -----MobileView-------- */}
-        {isOpen && (
-          <div className="md:hidden bg-white shadow-md px-4 pb-4 pt-2 space-y-3">
-            {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                to={`${link.path.toLowerCase()}`}
-                onClick={() => setIsOpen(false)}
-                className="block text-gray-700 hover:text-blue-600 font-medium transition"
-              >
-                {link.label}
-              </Link>
-            ))}
-            <hr />
-            <div className="flex justify-evenly text-gray-600 pt-2">
-              <Bell className="hover:text-blue-600 cursor-pointer" />
-              <Mail className="hover:text-blue-600 cursor-pointer" />
-              <Settings className="hover:text-blue-600 cursor-pointer" />
-            </div>
-          </div>
-        )}
-      </header>
 
-      <main className="mt-20">
-        <Outlet />
+        {/* Sidebar Navigation */}
+        <div className="flex flex-col gap-2 flex-grow">
+          {sidebarLinks.map(({ label, path, icon: Icon }) => (
+            <NavLink
+              key={label}
+              to={path}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                  isActive
+                    ? "bg-yellow-500 text-black font-semibold"
+                    : "hover:bg-yellow-600 hover:text-white"
+                }`
+              }
+            >
+              <Icon size={20} />
+              {label}
+            </NavLink>
+          ))}
+        </div>
+
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          className="mt-6 flex items-center gap-3 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl"
+        >
+          <LogOut size={20} />
+          Logout
+        </button>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 p-6 overflow-x-auto bg-gray-100 w-300">
+        {/* Top Navbar */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="relative w-full max-w-sm">
+            <input
+              type="text"
+              placeholder="Search..."
+              className="pl-10 pr-4 py-2 rounded-lg w-full bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            />
+            <Search className="absolute left-3 top-2.5 text-gray-500" size={18} />
+          </div>
+          <div className="flex items-center gap-4">
+            <button className="relative p-2 rounded-full bg-gray-100 hover:bg-gray-200">
+              <Bell size={20} className="text-gray-700" />
+              <span className="absolute top-0 right-0 w-2 h-2 bg-red-600 rounded-full"></span>
+            </button>
+            <button className="relative p-2 rounded-full bg-gray-100 hover:bg-gray-200">
+              <Mail size={20} className="text-gray-700" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content Display */}
+        <div className="bg-white rounded-xl shadow-md p-6 w-full min-h-[calc(100vh-150px)]">
+          <h1 className="text-xl font-bold mb-4">Welcome, {name}</h1>
+          <Outlet />
+        </div>
       </main>
-    </>
+    </div>
   );
 };
 
