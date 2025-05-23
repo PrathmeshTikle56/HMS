@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -7,6 +7,9 @@ import { JwtService } from '@nestjs/jwt';
 import { User, UserDocument } from './schemas/user.schema';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { BasicDetailsDto } from './dto/basic-details.dto';
+import { EducationDetailsDto } from './dto/education-details.dto';
+import { BankDetailsDto } from './dto/bank-details.dto';
 import { PERMISSIONS } from './constants/permissions.constant';
 
 @Injectable()
@@ -37,6 +40,30 @@ export class AuthService {
     return createdUser.save();
   }
 
+  async saveBasicDetails(userId: string, details: BasicDetailsDto) {
+    const user = await this.userModel.findByIdAndUpdate(userId, details, { new: true });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    return user;
+  }
+
+  async saveEducationAndBankDetails(
+    userId: string,
+    education: EducationDetailsDto,
+    bank: BankDetailsDto,
+  ) {
+    const user = await this.userModel.findByIdAndUpdate(
+      userId,
+      { ...education, ...bank },
+      { new: true },
+    );
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    return user;
+  }
+
   async validateUser(email: string, pass: string): Promise<UserDocument | null> {
     const user = await this.userModel.findOne({ email });
     if (user && (await bcrypt.compare(pass, user.password))) {
@@ -55,7 +82,7 @@ export class AuthService {
       userId: user._id,
       email: user.email,
       role: user.role,
-      permissions: user.customPermissions, // Include resource-specific permissions in JWT
+      permissions: user.customPermissions,
     };
 
     return {
