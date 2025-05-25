@@ -82,7 +82,7 @@ export class AuthService {
       userId: user._id,
       email: user.email,
       role: user.role,
-      permissions: user.customPermissions,
+      customPermissions: user.customPermissions,
     };
 
     return {

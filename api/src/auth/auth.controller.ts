@@ -55,7 +55,7 @@ export class AuthController {
       userId: req.user.userId,
       email: req.user.email,
       role: req.user.role,
-      customPermissions: req.user.permissions,
+      customPermissions: req.user.customPermissions,
     };
   }
 }
