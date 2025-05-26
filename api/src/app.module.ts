@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { LeaveModule } from './leave/leave.module';
 import { ManageUsersModule } from './manage-users/manage-users.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { PayrollModule } from './payroll/payroll.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { AttendanceModule } from './attendance/attendance.module';
     LeaveModule,
     ManageUsersModule,
     AttendanceModule,
+    PayrollModule,
   ],
 })
 export class AppModule {}

@@ -27,15 +27,16 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
     const role = registerDto.role || 'Employee';
-
-    // Assign resource-based permissions
     const customPermissions = PERMISSIONS[role] || {};
+
+    const employeeId = `EMP${Date.now()}${Math.floor(Math.random() * 10000)}`;
 
     const createdUser = new this.userModel({
       ...registerDto,
       password: hashedPassword,
       role,
       customPermissions,
+      employeeId, 
     });
     return createdUser.save();
   }
@@ -83,6 +84,7 @@ export class AuthService {
       email: user.email,
       role: user.role,
       customPermissions: user.customPermissions,
+      employeeId: user.employeeId,
     };
 
     return {

@@ -17,6 +17,9 @@ export class User {
   @Prop({ default: 'Employee', enum: ['Admin', 'Manager', 'HR', 'Employee'] })
   role: string;
 
+  @Prop({ unique: true, required: true })
+  employeeId: string;
+
   @Prop({
     type: Object,
     default: {}, // Example: { users: ['read'], leaves: ['read', 'write'] }

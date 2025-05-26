@@ -18,7 +18,7 @@ export class LeaveController {
     return this.leaveService.fetchLeaves(req.user);
   }
 
-  @Patch(':id')
+  @Patch('status/:id')
   async updateStatus(
     @Req() req: any,
     @Param('id') id: string,
