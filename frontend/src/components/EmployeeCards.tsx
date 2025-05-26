@@ -1,4 +1,5 @@
 import React from "react";
+import arrowImage from "../assets/arrow.png";
 
 type EmployeeCardProps = {
   name: string;
@@ -12,25 +13,36 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
   imageUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRUpiglNG5F4DdRpAG_jVCrqsQVX4P2d4jLzQ&s",
 }) => {
   return (
-    <div className="flex items-center justify-between bg-blue-900 p-4 rounded-lg shadow-md hover:shadow-lg transition">
-      <div className="flex items-center gap-2">
+    <div className="relative flex items-center justify-between bg-blue-900 p-4 rounded-lg shadow-md hover:shadow-lg transition">
+      {/* Left side: profile image + name + role */}
+      <div className="flex items-center gap-4">
         <img
           src={imageUrl}
           alt={name}
-          className="w-24 h-24 rounded-full  border-4 border-gray-200 mb-4 "
+          className="w-24 h-24 rounded-full border-4 border-gray-200"
         />
-        <div className="flex h-auto flex-col gap-2 items-center">
-          <h3 className="md:text-3xl font-semibold text-white sm:text-xl">
-            {name}
-          </h3>
-          <p className="md:text-xl text-gray-300 sm:text-sm">{role}</p>
+        <div className="flex flex-col gap-1 items-start">
+          <h3 className="md:text-2xl font-semibold text-white">{name}</h3>
+          <p className="md:text-lg text-gray-300">{role}</p>
         </div>
       </div>
-      <button className="bg-white text-black p-2 rounded-sm cursor-pointer hover:bg-blue-50">
+
+      {/* Right side: Edit button */}
+      <button className="bg-yellow-500 px-5 py-2 rounded-sm cursor-pointer hover:bg-yellow-400">
         Edit Profile
       </button>
+
+      {/* Arrow image positioned at top-right */}
+      <img
+  src={arrowImage}
+  alt="arrow"
+  className="absolute top-1 right-0 w-[150px] h-[100px] rotate-0"
+/>
     </div>
   );
 };
 
 export default EmployeeCard;
+
+
+

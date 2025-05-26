@@ -18,19 +18,19 @@ const AnnouncementBox: React.FC<AnnouncementBoxProps> = ({ announcements }) => {
   };
 
   return (
-    <div className="space-y-6 w-full h-full bg-white p-5 shadow-md">
-      <h2 className="text-xl font-bold p-4 ">Announcements</h2>
+    <div className="space-y-6 w-full h-full bg-white py-10 px-6 shadow-md rounded-md">
+      <h2 className="text-xl font-bold">Announcement(s)</h2>
       {announcements.map((announcement, index) => (
-        <div key={index}>
+        <div key={index} className="border border-blue-200 rounded-md overflow-hidden">
           <button
             onClick={() => toggle(index)}
-            className="w-full relative text-left p-5 bg-blue-100 hover:bg-gray-50 font-medium flex justify-between items-center"
+            className="w-full text-left py-3 px-4 bg-blue-100 hover:bg-blue-200 font-medium flex justify-between items-center"
           >
             {announcement.title}
             <span>{openIndex === index ? <ChevronUp /> : <ChevronDown />}</span>
           </button>
           {openIndex === index && (
-            <div className="px-4 absolute z-20 pb-4 text-gray-700 bg-gray-100">
+            <div className="px-4 py-3 text-gray-700 bg-gray-100 border-t border-blue-200">
               {announcement.content}
             </div>
           )}

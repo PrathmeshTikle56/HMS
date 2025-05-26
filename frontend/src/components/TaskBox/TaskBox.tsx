@@ -16,16 +16,21 @@ const TaskBox: React.FC<TaskBoxProps> = ({ tasks }) => {
   };
 
   return (
-    <div className="space-y-6 w-full h-full bg-white  py-10 px-5 shadow-md">
-      <h2 className="text-lg font-semibold mb-4">
-        Task {currentIndex + 1} of {tasks.length}
-      </h2>
-      <div className="mb-6 text-gray-800">{tasks[currentIndex]}</div>
-      <div className="flex justify-between">
+    <div className="w-[48%] h-[300px] bg-white shadow-md rounded-md py-10 px-6 space-y-6 flex flex-col justify-between">
+      <div>
+        <h2 className="text-xl font-semibold mb-4">
+          Task {currentIndex + 1} of {tasks.length}
+        </h2>
+        <div className="bg-blue-50 border border-blue-200 p-4 rounded-md text-gray-800 text-sm">
+          {tasks[currentIndex]}
+        </div>
+      </div>
+
+      <div className="flex justify-between mt-4">
         <button
           onClick={prevTask}
           disabled={currentIndex === 0}
-          className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+          className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 disabled:opacity-50"
         >
           Previous
         </button>
