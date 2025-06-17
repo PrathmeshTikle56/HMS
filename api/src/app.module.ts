@@ -17,9 +17,9 @@ import { PayrollModule } from './payroll/payroll.module';
       isGlobal: true,
       validationSchema: Joi.object({
         MONGO_URI: Joi.string().uri().required(), // MongoDB connection string
-        JWT_SECRET: Joi.string().min(32).required(), // Secure JWT secret
+        JWT_SECRET: Joi.string().required(), // Secure JWT secret
         PORT: Joi.number().default(3000), // Default server port
-        CORS_ORIGIN: Joi.string().uri().default('http://localhost:5173'), // CORS origin
+        CORS_ORIGIN: Joi.string().uri().default('http://localhost:3001'), // CORS origin
       }),
     }),
 

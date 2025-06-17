@@ -5,9 +5,6 @@ export type UserDocument = User & Document;
 
 @Schema()
 export class User {
-  @Prop({ required: true })
-  name: string;
-
   @Prop({ required: true, unique: true })
   email: string;
 
@@ -19,6 +16,9 @@ export class User {
 
   @Prop({ unique: true, required: true })
   employeeId: string;
+
+  @Prop({ type: String, ref: 'User', default: null })
+  createdBy: string;
 
   @Prop({
     type: Object,
