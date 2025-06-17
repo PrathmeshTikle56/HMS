@@ -1,4 +1,9 @@
-import { IsString, IsDateString, IsNotEmpty, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsDateString,
+  IsNotEmpty,
+  IsOptional,
+} from 'class-validator';
 
 export class BankDetailsDto {
   @IsString()
@@ -20,4 +25,12 @@ export class BankDetailsDto {
   @IsString()
   @IsOptional()
   accountHolderName: string;
+
+  @IsString()
+  @IsOptional()
+  aadharNumber: string;
+
+  @IsString()
+  @IsOptional()
+  panNumber: string;
 }

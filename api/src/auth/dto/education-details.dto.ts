@@ -1,14 +1,18 @@
-import { IsString, IsDateString, IsNotEmpty, IsOptional } from 'class-validator';
-
+import {
+  IsString,
+  IsDateString,
+  IsNotEmpty,
+  IsOptional,
+} from 'class-validator';
 
 export class EducationDetailsDto {
   @IsString()
   @IsNotEmpty()
-  qualification: string;
+  highestQualification: string;
 
   @IsString()
   @IsNotEmpty()
-  institution: string;
+  university: string;
 
   @IsNotEmpty()
   yearOfPassing: number;
@@ -17,4 +21,3 @@ export class EducationDetailsDto {
   @IsNotEmpty()
   grade: string;
 }
-

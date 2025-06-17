@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -19,30 +23,50 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
+  async isFirstUser(): Promise<boolean> {
+    const count = await this.userModel.countDocuments();
+    return count === 0;
+  }
+
   async register(registerDto: RegisterDto) {
-    const existingUser = await this.userModel.findOne({ email: registerDto.email });
+    const existingUser = await this.userModel.findOne({
+      email: registerDto.email,
+    });
     if (existingUser) {
       throw new UnauthorizedException('User already exists with this email');
     }
 
+    const totalUsers = await this.userModel.countDocuments();
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-    const role = registerDto.role || 'Employee';
-    const customPermissions = PERMISSIONS[role] || {};
+
+    let role: string;
+    let customPermissions: Record<string, string[]>;
+
+    if (totalUsers === 0) {
+      role = 'SuperAdmin';
+      customPermissions = PERMISSIONS[role];
+    } else {
+      role = registerDto.role || 'Employee';
+      customPermissions = PERMISSIONS[role] || {};
+    }
 
     const employeeId = `EMP${Date.now()}${Math.floor(Math.random() * 10000)}`;
 
     const createdUser = new this.userModel({
-      ...registerDto,
+      email: registerDto.email,
       password: hashedPassword,
       role,
       customPermissions,
-      employeeId, 
+      employeeId,
     });
+
     return createdUser.save();
   }
 
   async saveBasicDetails(userId: string, details: BasicDetailsDto) {
-    const user = await this.userModel.findByIdAndUpdate(userId, details, { new: true });
+    const user = await this.userModel.findByIdAndUpdate(userId, details, {
+      new: true,
+    });
     if (!user) {
       throw new BadRequestException('User not found');
     }
@@ -65,7 +89,10 @@ export class AuthService {
     return user;
   }
 
-  async validateUser(email: string, pass: string): Promise<UserDocument | null> {
+  async validateUser(
+    email: string,
+    pass: string,
+  ): Promise<UserDocument | null> {
     const user = await this.userModel.findOne({ email });
     if (user && (await bcrypt.compare(pass, user.password))) {
       return user;

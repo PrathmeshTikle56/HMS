@@ -11,7 +11,10 @@ export class User {
   @Prop({ required: true })
   password: string;
 
-  @Prop({ default: 'Employee', enum: ['Admin', 'Manager', 'HR', 'Employee'] })
+  @Prop({
+    default: 'Employee',
+    enum: ['SuperAdmin', 'Admin', 'Manager', 'HR', 'Employee'],
+  })
   role: string;
 
   @Prop({ unique: true, required: true })
@@ -22,7 +25,7 @@ export class User {
 
   @Prop({
     type: Object,
-    default: {}, // Example: { users: ['read'], leaves: ['read', 'write'] }
+    default: {},
   })
   customPermissions: Record<string, string[]>;
   // Personal Details
