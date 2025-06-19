@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -11,9 +12,7 @@ import { JwtService } from '@nestjs/jwt';
 import { User, UserDocument } from './schemas/user.schema';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { BasicDetailsDto } from './dto/basic-details.dto';
-import { EducationDetailsDto } from './dto/education-details.dto';
-import { BankDetailsDto } from './dto/bank-details.dto';
+import { UpdateCompleteProfileDto } from './dto/update-complete-profile.dto';
 import { PERMISSIONS } from './constants/permissions.constant';
 
 @Injectable()
@@ -29,9 +28,11 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
+    console.log(RegisterDto);
     const existingUser = await this.userModel.findOne({
       email: registerDto.email,
     });
+
     if (existingUser) {
       throw new UnauthorizedException('User already exists with this email');
     }
@@ -60,33 +61,35 @@ export class AuthService {
       employeeId,
     });
 
-    return createdUser.save();
+    const savedUser = await createdUser.save();
+    return {
+      message: '${savedUser.role} registered successfully',
+      userId: savedUser._id,
+      role: savedUser.role,
+      employeeId: savedUser.employeeId,
+    };
   }
 
-  async saveBasicDetails(userId: string, details: BasicDetailsDto) {
-    const user = await this.userModel.findByIdAndUpdate(userId, details, {
-      new: true,
-    });
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-    return user;
-  }
+  async updateCompleteProfile(userId: string, dto: UpdateCompleteProfileDto) {
+    // console.log(dto.basicDetails?.firstName);
+    console.log(userId);
+    const updateData = {
+      ...dto.basicDetails,
+      ...dto.educationDetails,
+      ...dto.bankDetails,
+    };
 
-  async saveEducationAndBankDetails(
-    userId: string,
-    education: EducationDetailsDto,
-    bank: BankDetailsDto,
-  ) {
-    const user = await this.userModel.findByIdAndUpdate(
+    const updatedUser = await this.userModel.findByIdAndUpdate(
       userId,
-      { ...education, ...bank },
+      { $set: updateData },
       { new: true },
     );
-    if (!user) {
-      throw new BadRequestException('User not found');
+
+    if (!updatedUser) {
+      throw new NotFoundException('User not found');
     }
-    return user;
+
+    return updatedUser;
   }
 
   async validateUser(
@@ -102,6 +105,7 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
+    // console.log(loginDto.email, loginDto.password);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -117,5 +121,15 @@ export class AuthService {
     return {
       accessToken: this.jwtService.sign(payload),
     };
+  }
+  async findEmployeesOnly() {
+    return this.userModel.find({
+      role: { $nin: ['SuperAdmin', 'Admin', 'HR'] }, // exclude these roles
+    });
+  }
+
+  async findEmployeeById(userId: string) {
+    const user = await this.userModel.findById(userId);
+    return user;
   }
 }

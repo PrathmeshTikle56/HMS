@@ -95,6 +95,12 @@ export class User {
   ifscCode: string;
 
   @Prop()
+  adharNumber: string;
+
+  @Prop()
+  panNumber: string;
+
+  @Prop()
   branchName: string;
 
   @Prop()

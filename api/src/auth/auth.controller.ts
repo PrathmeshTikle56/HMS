@@ -1,11 +1,17 @@
-import { Controller, Post, Body, Get, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  Req,
+  Param,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { BasicDetailsDto } from './dto/basic-details.dto';
-import { EducationDetailsDto } from './dto/education-details.dto';
-import { BankDetailsDto } from './dto/bank-details.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { UpdateCompleteProfileDto } from './dto/update-complete-profile.dto';
 
 @Controller('users')
 export class AuthController {
@@ -21,27 +27,15 @@ export class AuthController {
     return this.authService.register(registerDto);
   }
 
-  @Post('basic-details')
+  @Post('complete-profile/:userId')
   @UseGuards(JwtAuthGuard)
-  async saveBasicDetails(
+  async updateCompleteProfile(
     @Req() req: any,
-    @Body() basicDetailsDto: BasicDetailsDto,
+    @Param('userId') userId: string, // Optional from body
+    @Body() dto: UpdateCompleteProfileDto,
   ) {
-    return this.authService.saveBasicDetails(req.user.userId, basicDetailsDto);
-  }
-
-  @Post('education-bank-details')
-  @UseGuards(JwtAuthGuard)
-  async saveEducationAndBankDetails(
-    @Req() req: any,
-    @Body() educationDetailsDto: EducationDetailsDto,
-    @Body() bankDetailsDto: BankDetailsDto,
-  ) {
-    return this.authService.saveEducationAndBankDetails(
-      req.user.userId,
-      educationDetailsDto,
-      bankDetailsDto,
-    );
+    const targetUserId = userId || req.user.userId; // HR/Employee distinction
+    return this.authService.updateCompleteProfile(targetUserId, dto);
   }
 
   @Post('login')
@@ -59,5 +53,16 @@ export class AuthController {
       customPermissions: req.user.customPermissions,
       employeeId: req.user.employeeId,
     };
+  }
+
+  @Get('employee/:id')
+  async getEmployeeById(@Param('id') id: string) {
+    console.log('Employee ID:', id);
+    return this.authService.findEmployeeById(id);
+  }
+
+  @Get('employees')
+  async getEmployeesOnly() {
+    return this.authService.findEmployeesOnly();
   }
 }
