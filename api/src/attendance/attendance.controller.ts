@@ -1,19 +1,50 @@
-import { Controller, Post, Get, Body, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Put,
+  Body,
+  Param,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { MarkAttendanceDto } from './dto/mark-attendance.dto';
+import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 
 @Controller('attendance')
 @UseGuards(JwtAuthGuard)
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
+  // ✅ Get All Attendance (Admin/HR)
+  @Get('all')
+  getAll(@Req() req) {
+    return this.attendanceService.getAttendance(req.user);
+  }
+
+  // ✅ Mark Attendance (Employee)
   @Post('mark')
-  async markAttendance(@Req() req, @Body() body: any) {
+  mark(@Req() req, @Body() body: MarkAttendanceDto) {
     return this.attendanceService.markAttendance(req.user, body);
   }
 
-  @Get()
-  async getAttendance(@Req() req) {
-    return this.attendanceService.getAttendance(req.user);
+  // ✅ Get My Attendance (Employee)
+  @Get('my')
+@UseGuards(JwtAuthGuard)
+async getMyAttendance(@Req() req) {
+  const userId = req.user._id;
+  return this.attendanceService.findByUser(userId);
+}
+
+  // ✅ Update Attendance (Admin/HR)
+  @Put(':id')
+  updateAttendance(
+    @Req() req,
+    @Param('id') id: string,
+    @Body() body: UpdateAttendanceDto,
+  ) {
+    return this.attendanceService.updateAttendance(req.user, id, body);
   }
 }

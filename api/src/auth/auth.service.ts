@@ -28,7 +28,6 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
-    console.log(RegisterDto);
     const existingUser = await this.userModel.findOne({
       email: registerDto.email,
     });
@@ -71,8 +70,6 @@ export class AuthService {
   }
 
   async updateCompleteProfile(userId: string, dto: UpdateCompleteProfileDto) {
-    // console.log(dto.basicDetails?.firstName);
-    console.log(userId);
     const updateData = {
       ...dto.basicDetails,
       ...dto.educationDetails,
@@ -103,9 +100,10 @@ export class AuthService {
     return null;
   }
 
+  // ✅ FINAL UPDATED LOGIN
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
-    // console.log(loginDto.email, loginDto.password);
+
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -116,15 +114,26 @@ export class AuthService {
       role: user.role,
       customPermissions: user.customPermissions,
       employeeId: user.employeeId,
+      firstName: user.firstName,
+      lastName: user.lastName,
     };
 
     return {
       accessToken: this.jwtService.sign(payload),
+      user: {
+        _id: user._id,
+        email: user.email,
+        role: user.role,
+        employeeId: user.employeeId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
     };
   }
+
   async findEmployeesOnly() {
     return this.userModel.find({
-      role: { $nin: ['SuperAdmin', 'Admin', 'HR'] }, // exclude these roles
+      role: { $nin: ['SuperAdmin', 'Admin', 'HR'] },
     });
   }
 

@@ -27,18 +27,23 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    
-    const user = await this.userModel.findById(payload.userId).select('-password');
+  const user = await this.userModel.findById(payload.userId).select('-password');
 
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    return {
-      userId: user._id,
-      email: user.email,
-      role: user.role,
-      customPermissions: user.customPermissions || {},
-    };
+  if (!user) {
+    throw new Error('User not found');
   }
+
+  return {
+    userId: user._id,
+    email: user.email,
+    role: user.role,
+    firstName: user.firstName,     // ✅ Add this
+    lastName: user.lastName,       // ✅ And this
+    name: `${user.firstName} ${user.lastName}`, // Optional: Keep name if needed
+    customPermissions: user.customPermissions || {},
+  };
+}
+
+
+
 }
