@@ -28,7 +28,7 @@ export class BankDetailsDto {
 
   @IsString()
   @IsOptional()
-  aadharNumber: string;
+  adharNumber: string;
 
   @IsString()
   @IsOptional()

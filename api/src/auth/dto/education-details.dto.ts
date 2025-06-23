@@ -8,12 +8,11 @@ import {
 export class EducationDetailsDto {
   @IsString()
   @IsNotEmpty()
-  highestQualification: string;
+  qualification: string;
 
   @IsString()
   @IsNotEmpty()
-  university: string;
-
+  institution: string;
   @IsNotEmpty()
   yearOfPassing: number;
 

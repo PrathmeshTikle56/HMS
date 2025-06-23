@@ -70,7 +70,7 @@ export class AuthService {
   }
 
   async updateCompleteProfile(userId: string, dto: UpdateCompleteProfileDto) {
-    console.log(userId);
+    // console.log(userId);
 
     const { basicDetails, educationDetails, bankDetails } = dto;
 
@@ -160,5 +160,23 @@ export class AuthService {
   async findEmployeeById(userId: string) {
     const user = await this.userModel.findById(userId);
     return user;
+  }
+
+  async updateProfile(userId: string, updateUserDto: UpdateCompleteProfileDto) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    // Flatten the nested DTOs into a single update object
+    const flatUpdate = {
+      ...(updateUserDto.basicDetails || {}),
+      ...(updateUserDto.bankDetails || {}),
+      ...(updateUserDto.educationDetails || {}),
+    };
+
+    // Update the user directly with flattened data
+    Object.assign(user, flatUpdate);
+
+    await user.save();
+    return { message: 'Profile updated successfully', user };
   }
 }

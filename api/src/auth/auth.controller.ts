@@ -3,6 +3,7 @@ import {
   Post,
   Body,
   Get,
+  Patch,
   UseGuards,
   Req,
   Param,
@@ -58,9 +59,17 @@ export class AuthController {
 
   @Get('employee/:id')
   async getEmployeeById(@Param('id') id: string) {
-    console.log('Employee ID:', id);
+    // console.log('Employee ID:', id);
     return this.authService.findEmployeeById(id);
   }
+
+  @Patch('employee/:id')
+  async updateProfile(
+      @Param('id') userId: string,
+      @Body() updateUserDto: UpdateCompleteProfileDto,
+    ) {
+      return this.authService.updateProfile(userId, updateUserDto);
+    }
 
   @Get('employees')
   async getEmployeesOnly() {
