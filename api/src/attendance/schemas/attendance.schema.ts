@@ -14,13 +14,20 @@ export class Attendance {
   lastName: string;
 
   @Prop({ required: true })
-  date: string; // YYYY-MM-DD
+  date: string; // Format: YYYY-MM-DD
 
   @Prop({ default: 'Absent', enum: ['Present', 'Absent', 'Late'] })
   status: string;
 
   @Prop()
-  time: string; // e.g. 09:00 AM
+  time: string; // e.g., 09:00 AM
+
+  // ✅ New fields to store geolocation
+  @Prop({ type: Number })
+  latitude: number;
+
+  @Prop({ type: Number })
+  longitude: number;
 }
 
 export type AttendanceDocument = Attendance & Document;

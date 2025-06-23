@@ -1,4 +1,11 @@
-import { IsEnum, IsOptional, IsString, Matches } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  Matches,
+  IsNumber,
+  IsNotEmpty,
+} from 'class-validator';
 
 export class MarkAttendanceDto {
   @IsEnum(['Present', 'Absent', 'Late'], {
@@ -15,4 +22,12 @@ export class MarkAttendanceDto {
     message: 'Date must be in YYYY-MM-DD format',
   })
   date?: string;
+
+  @IsNotEmpty({ message: 'Latitude is required' })
+  @IsNumber({}, { message: 'Latitude must be a number' })
+  latitude: number;
+
+  @IsNotEmpty({ message: 'Longitude is required' })
+  @IsNumber({}, { message: 'Longitude must be a number' })
+  longitude: number;
 }

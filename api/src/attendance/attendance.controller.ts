@@ -32,11 +32,9 @@ export class AttendanceController {
 
   // ✅ Get My Attendance (Employee)
   @Get('my')
-@UseGuards(JwtAuthGuard)
-async getMyAttendance(@Req() req) {
-  const userId = req.user._id;
-  return this.attendanceService.findByUser(userId);
-}
+  getMyAttendance(@Req() req) {
+    return this.attendanceService.findByUser(req.user._id);
+  }
 
   // ✅ Update Attendance (Admin/HR)
   @Put(':id')
