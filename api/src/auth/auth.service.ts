@@ -70,10 +70,30 @@ export class AuthService {
   }
 
   async updateCompleteProfile(userId: string, dto: UpdateCompleteProfileDto) {
+    console.log(userId);
+
+    const { basicDetails, educationDetails, bankDetails } = dto;
+
+    // Determine leave policy based on employmentType
+    let paidLeaveAllowed = 0;
+    let wfhAllowed = 0;
+
+    const empType = basicDetails?.employmentType?.toLowerCase();
+
+    if (empType === 'full-time') {
+      paidLeaveAllowed = 1.5;
+      wfhAllowed = 1;
+    } else if (empType === 'intern') {
+      paidLeaveAllowed = 0;
+      wfhAllowed = 0;
+    }
+
     const updateData = {
-      ...dto.basicDetails,
-      ...dto.educationDetails,
-      ...dto.bankDetails,
+      ...basicDetails,
+      ...educationDetails,
+      ...bankDetails,
+      paidLeaveAllowed,
+      wfhAllowed,
     };
 
     const updatedUser = await this.userModel.findByIdAndUpdate(

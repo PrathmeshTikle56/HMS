@@ -13,10 +13,15 @@ export class LeaveService {
     @InjectModel(Leave.name) private leaveModel: Model<LeaveDocument>,
   ) {}
 
-  async applyLeave(user: { userId: string; customPermissions: Record<string, string[]> }, data: any) {
+  async applyLeave(
+    user: { userId: string; customPermissions: Record<string, string[]> },
+    data: any,
+  ) {
     // Check if the user has 'write' permission for the 'leaves' resource
     if (!user.customPermissions['leaves']?.includes('write')) {
-      throw new ForbiddenException('You do not have permission to apply for leave');
+      throw new ForbiddenException(
+        'You do not have permission to apply for leave',
+      );
     }
 
     const leave = new this.leaveModel({
@@ -27,17 +32,21 @@ export class LeaveService {
     return leave.save();
   }
 
-  async fetchLeaves(user: { userId: string; customPermissions: Record<string, string[]> }) {
-    // Check if the user has 'read' permission for the 'leaves' resource
+  // This method can fetch leaves of individual and all user based on permissions
+  // if user is emp then only his leaves and if admin view all leaves
+  async fetchLeaves(user: {
+    userId: string;
+    customPermissions: Record<string, string[]>;
+  }) {
     if (!user.customPermissions['leaves']?.includes('read')) {
       throw new ForbiddenException('You do not have permission to view leaves');
     }
-
-    // Admin can view all leaves
     if (user.customPermissions['leaves'].includes('readAll')) {
-      return this.leaveModel.find().exec();
+      return this.leaveModel
+        .find()
+        .populate('userId', 'firstName lastName email')
+        .exec();
     }
-
     // Non-admin users can only view their own leaves
     return this.leaveModel.find({ userId: user.userId }).exec();
   }
@@ -47,6 +56,7 @@ export class LeaveService {
     id: string,
     status: string,
   ) {
+    console.log(id);
     const validStatuses = ['Pending', 'Approved', 'Rejected'];
     if (!validStatuses.includes(status)) {
       throw new BadRequestException(
@@ -56,7 +66,9 @@ export class LeaveService {
 
     // Check if the user has 'update' permission for the 'leaves' resource
     if (!user.customPermissions['leaves']?.includes('update')) {
-      throw new ForbiddenException('You do not have permission to update leave status');
+      throw new ForbiddenException(
+        'You do not have permission to update leave status',
+      );
     }
 
     const leave = await this.leaveModel.findByIdAndUpdate(

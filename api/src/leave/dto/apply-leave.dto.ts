@@ -3,13 +3,25 @@ import { IsNotEmpty, IsString } from 'class-validator';
 export class ApplyLeaveDto {
   @IsNotEmpty()
   @IsString()
-  startDate: string;
+  startDate: Date;
 
   @IsNotEmpty()
   @IsString()
-  endDate: string;
+  endDate: Date;
 
   @IsNotEmpty()
   @IsString()
   reason: string;
+
+  @IsNotEmpty()
+  @IsString()
+  dayType: string;
+
+  @IsNotEmpty()
+  @IsString()
+  leaveType: string;
+
+  @IsNotEmpty()
+  @IsString()
+  status: string;
 }

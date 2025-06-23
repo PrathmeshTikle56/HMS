@@ -11,13 +11,13 @@ export const PERMISSIONS = {
   },
   Manager: {
     users: ['read', 'write', 'delete'],
-    leaves: ['read', 'update', 'readAll'],
-    attendance: ['read', 'write', 'update', 'readAll'],
+    leaves: ['read', 'write', 'update', 'readAll'],
+    attendance: ['read', 'write'],
   },
   HR: {
     users: ['read', 'write', 'update'],
-    leaves: ['read', 'update', 'readAll'],
-    attendance: ['read', 'write', 'update'],
+    leaves: ['read', 'write', 'update', 'readAll'],
+    attendance: ['read'],
   },
   Employee: {
     users: ['read'],

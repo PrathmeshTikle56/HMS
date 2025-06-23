@@ -105,6 +105,18 @@ export class User {
 
   @Prop()
   accountHolderName: string;
+
+  @Prop()
+  paidLeaveAllowed: number;
+
+  @Prop()
+  wfhAllowed: number;
+
+  @Prop()
+  plLeft: number;
+
+  @Prop()
+  wfhLeft: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

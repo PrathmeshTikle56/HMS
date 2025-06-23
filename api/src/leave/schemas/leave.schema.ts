@@ -1,19 +1,30 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
-
+import mongoose, { Document } from 'mongoose';
 @Schema()
 export class Leave {
-  @Prop({ required: true })
-  userId: string;
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
+  userId: mongoose.Types.ObjectId;
 
   @Prop({ required: true })
-  startDate: string;
+  startDate: Date;
 
   @Prop({ required: true })
-  endDate: string;
+  endDate: Date;
 
   @Prop({ required: true })
   reason: string;
+
+  @Prop({
+    default: 'fullday',
+    enum: ['fullday', 'halfday'],
+  })
+  dayType: string;
+
+  @Prop({
+    default: 'casual',
+    enum: ['sick', 'casual'],
+  })
+  leaveType: string;
 
   @Prop({ default: 'Pending', enum: ['Pending', 'Approved', 'Rejected'] })
   status: string;

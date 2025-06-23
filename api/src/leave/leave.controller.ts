@@ -1,4 +1,13 @@
-import { Controller, Post, Body, Get, UseGuards, Req, Param, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  Req,
+  Param,
+  Patch,
+} from '@nestjs/common';
 import { LeaveService } from './leave.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -13,8 +22,15 @@ export class LeaveController {
     return this.leaveService.applyLeave(req.user, body);
   }
 
+  // employee will get all his leaves
   @Get()
   async getLeaves(@Req() req: any) {
+    return this.leaveService.fetchLeaves(req.user);
+  }
+
+  // Hr will get all employees leave
+  @Get()
+  async getAllEmployeeLeaves(@Req() req: any) {
     return this.leaveService.fetchLeaves(req.user);
   }
 
