@@ -45,4 +45,15 @@ export class AttendanceController {
   ) {
     return this.attendanceService.updateAttendance(req.user, id, body);
   }
+  // ✅ Get today's attendance for all users
+  @Get('today')
+  getTodayAttendance(@Req() req) {
+    return this.attendanceService.getTodayAttendance(req.user);
+  }
+
+  // ✅ Get past attendance history (e.g. for last 7 days)
+  @Get('history')
+  getAttendanceHistory(@Req() req) {
+    return this.attendanceService.getAttendanceHistory(req.user);
+  }
 }
