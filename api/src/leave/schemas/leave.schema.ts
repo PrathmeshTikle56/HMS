@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { Document } from 'mongoose';
-@Schema()
+@Schema({ timestamps: true })
 export class Leave {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
   userId: mongoose.Types.ObjectId;
@@ -26,8 +26,14 @@ export class Leave {
   })
   leaveType: string;
 
+  @Prop({ type: Number, required: true })
+  noOfDays: number;
+
   @Prop({ default: 'Pending', enum: ['Pending', 'Approved', 'Rejected'] })
   status: string;
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false })
+  approvedBy: mongoose.Types.ObjectId;
 }
 
 export type LeaveDocument = Leave & Document;

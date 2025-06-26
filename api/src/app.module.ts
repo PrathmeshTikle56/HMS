@@ -2,13 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import * as Joi from 'joi';
-
-// Feature modules
 import { AuthModule } from './auth/auth.module';
 import { LeaveModule } from './leave/leave.module';
 import { ManageUsersModule } from './manage-users/manage-users.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { PayrollModule } from './payroll/payroll.module';
+import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
   imports: [
@@ -28,8 +27,11 @@ import { PayrollModule } from './payroll/payroll.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGO_URI'), // Get MongoDB URI from environment variables
+        uri: configService.get<string>('MONGO_URI'),
       }),
+    }),
+    MulterModule.register({
+      dest: './uploads',
     }),
 
     // Import feature modules

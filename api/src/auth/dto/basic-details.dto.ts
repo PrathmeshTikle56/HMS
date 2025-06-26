@@ -55,5 +55,9 @@ export class BasicDetailsDto {
 
   @IsString()
   @IsOptional()
+  profileImage: string;
+
+  @IsString()
+  @IsOptional()
   employmentType: string;
 }

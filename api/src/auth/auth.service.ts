@@ -27,47 +27,50 @@ export class AuthService {
     return count === 0;
   }
 
-  async register(registerDto: RegisterDto) {
-    const existingUser = await this.userModel.findOne({
-      email: registerDto.email,
-    });
-
+  async register(registerDto: RegisterDto, creatorId?: string) {
+    const existingUser = await this.userModel.findOne({ email: registerDto.email });
     if (existingUser) {
       throw new UnauthorizedException('User already exists with this email');
     }
-
     const totalUsers = await this.userModel.countDocuments();
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-
-    let role: string;
-    let customPermissions: Record<string, string[]>;
-
+  
+    let role = 'Employee';
+    let customPermissions: Record<string, string[]> = {};
+  
     if (totalUsers === 0) {
+      // First user becomes SuperAdmin
       role = 'SuperAdmin';
       customPermissions = PERMISSIONS[role];
     } else {
+      // Later users — role is selected from DTO
       role = registerDto.role || 'Employee';
       customPermissions = PERMISSIONS[role] || {};
     }
-
+  
     const employeeId = `EMP${Date.now()}${Math.floor(Math.random() * 10000)}`;
-
+  
     const createdUser = new this.userModel({
       email: registerDto.email,
       password: hashedPassword,
       role,
+      createdBy: creatorId,
       customPermissions,
       employeeId,
     });
-
+  
     const savedUser = await createdUser.save();
+  
     return {
-      message: '${savedUser.role} registered successfully',
+      message: `${savedUser.role} registered successfully`,
       userId: savedUser._id,
+      createdBy: savedUser.createdBy,
       role: savedUser.role,
       employeeId: savedUser.employeeId,
     };
   }
+  
+  
 
   async updateCompleteProfile(userId: string, dto: UpdateCompleteProfileDto) {
     // console.log(userId);
@@ -120,7 +123,7 @@ export class AuthService {
     return null;
   }
 
-  // ✅ FINAL UPDATED LOGIN
+
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
 
@@ -134,8 +137,7 @@ export class AuthService {
       role: user.role,
       customPermissions: user.customPermissions,
       employeeId: user.employeeId,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      name:user.firstName + " " + user.lastName,
     };
 
     return {
@@ -145,8 +147,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         employeeId: user.employeeId,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        name:user.firstName + " " + user.lastName,
       },
     };
   }
@@ -179,4 +180,19 @@ export class AuthService {
     await user.save();
     return { message: 'Profile updated successfully', user };
   }
+
+
+  async updateProfileImage(userId: string, imageUrl: string) {
+    return this.userModel.findByIdAndUpdate(
+      userId,
+      { profileImage: imageUrl },
+      { new: true },
+    );
+  }
+
+  async getProfileImage(userId: string){
+    const user = await this.userModel.findById(userId);
+    return user?.profileImage;
+  }
+
 }

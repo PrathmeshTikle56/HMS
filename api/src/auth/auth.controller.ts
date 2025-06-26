@@ -7,7 +7,13 @@ import {
   UseGuards,
   Req,
   Param,
+  UseInterceptors,
+  UploadedFile,
+  
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -23,9 +29,14 @@ export class AuthController {
     const isFirst = await this.authService.isFirstUser(); // assuming the method is in UsersService
     return { isFirst };
   }
+
   @Post('register')
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  @UseGuards(JwtAuthGuard)
+  async register(
+    @Req() req: any,
+    @Body() registerDto: RegisterDto,
+  ) {
+    return this.authService.register(registerDto,req.user?.userId);
   }
 
   @Post('complete-profile/:userId')
@@ -59,9 +70,30 @@ export class AuthController {
 
   @Get('employee/:id')
   async getEmployeeById(@Param('id') id: string) {
-    // console.log('Employee ID:', id);
     return this.authService.findEmployeeById(id);
   }
+
+  @Post('upload-profile/:userId')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads/profile-images',
+        filename: (req, file, callback) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          callback(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+        },
+      }),
+    }),
+  )
+  async uploadProfileImage(@UploadedFile() file: Express.Multer.File, @Req() req,  @Param('userId') userId: string,
+) {
+    const targetUserId = userId || req.user.userId;
+    const imageUrl = `http://localhost:3000/uploads/profile-images/${file.filename}`;
+    return this.authService.updateProfileImage(targetUserId, imageUrl);
+  }
+
 
   @Patch('employee/:id')
   async updateProfile(
@@ -75,4 +107,11 @@ export class AuthController {
   async getEmployeesOnly() {
     return this.authService.findEmployeesOnly();
   }
+
+  @Get('profile-image/:id')
+  async getProfileImage(@Param('id') id: string) {
+    const imageUrl = await this.authService.getProfileImage(id);
+    return { imageUrl };
+  }
+  
 }

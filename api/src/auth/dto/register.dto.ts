@@ -6,6 +6,7 @@ import {
   MinLength,
   IsOptional,
   IsObject,
+  IsMongoId
 } from 'class-validator';
 
 export class RegisterDto {
@@ -25,7 +26,9 @@ export class RegisterDto {
   })
   role: string;
 
+
   @IsOptional()
   @IsObject({ message: 'Custom permissions must be an object' })
   customPermissions?: Record<string, string[]>;
+
 }

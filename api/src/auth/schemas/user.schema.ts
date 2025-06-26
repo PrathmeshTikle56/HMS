@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import mongoose, { Document } from 'mongoose';
+
 
 export type UserDocument = User & Document;
 
@@ -20,9 +21,9 @@ export class User {
   @Prop({ unique: true, required: true })
   employeeId: string;
 
-  @Prop({ type: String, ref: 'User', default: null })
-  createdBy: string;
-
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false, default: null })
+  createdBy: mongoose.Types.ObjectId | null;
+  
   @Prop({
     type: Object,
     default: {},
@@ -71,6 +72,8 @@ export class User {
   @Prop()
   employmentType: string;
 
+  @Prop({ type: String, default: null })
+  profileImage: string; 
   // Education
   @Prop()
   qualification: string;

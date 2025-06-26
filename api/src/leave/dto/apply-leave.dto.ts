@@ -24,4 +24,12 @@ export class ApplyLeaveDto {
   @IsNotEmpty()
   @IsString()
   status: string;
+
+  @IsNotEmpty()
+  @IsString()
+  noOfDays: number;
+
+  @IsNotEmpty()
+  @IsString()
+  approvedBy: string;
 }

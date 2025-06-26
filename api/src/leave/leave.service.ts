@@ -13,27 +13,73 @@ export class LeaveService {
     @InjectModel(Leave.name) private leaveModel: Model<LeaveDocument>,
   ) {}
 
+  // 🧠 Utility to calculate working leave days
+  private calculateLeaveDays(
+    startDate: string,
+    endDate: string,
+    dayType: string,
+  ): number {
+    if (dayType?.toLowerCase() === 'halfday') return 0.5;
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    let count = 0;
+    const current = new Date(start);
+
+    while (current <= end) {
+      const day = current.getDay(); // Sunday = 0, Saturday = 6
+      if (day !== 0 && day !== 6) {
+        count++;
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    return count;
+  }
+
+  // 📝 Apply for a new leave
   async applyLeave(
     user: { userId: string; customPermissions: Record<string, string[]> },
     data: any,
   ) {
-    // Check if the user has 'write' permission for the 'leaves' resource
     if (!user.customPermissions['leaves']?.includes('write')) {
       throw new ForbiddenException(
         'You do not have permission to apply for leave',
       );
     }
 
+    const { startDate, endDate, dayType } = data;
+
+    // 🔁 Check for overlapping leave
+    const overlappingLeave = await this.leaveModel.findOne({
+      userId: user.userId,
+      $or: [
+        {
+          startDate: { $lte: endDate },
+          endDate: { $gte: startDate },
+        },
+      ],
+    });
+
+    if (overlappingLeave) {
+      throw new BadRequestException(
+        'You already have a leave request for this date range',
+      );
+    }
+
+    const noOfDays = this.calculateLeaveDays(startDate, endDate, dayType);
+
     const leave = new this.leaveModel({
       ...data,
       userId: user.userId,
       status: 'Pending',
+      noOfDays,
     });
+
     return leave.save();
   }
 
-  // This method can fetch leaves of individual and all user based on permissions
-  // if user is emp then only his leaves and if admin view all leaves
+  // 📄 Fetch all or personal leaves
   async fetchLeaves(user: {
     userId: string;
     customPermissions: Record<string, string[]>;
@@ -41,22 +87,31 @@ export class LeaveService {
     if (!user.customPermissions['leaves']?.includes('read')) {
       throw new ForbiddenException('You do not have permission to view leaves');
     }
+
+    // 🔐 Admin/HR view all
     if (user.customPermissions['leaves'].includes('readAll')) {
       return this.leaveModel
         .find()
         .populate('userId', 'firstName lastName email')
+        .populate('approvedBy', 'firstName lastName email')
+        .sort({ createdAt: -1 })
         .exec();
     }
-    // Non-admin users can only view their own leaves
-    return this.leaveModel.find({ userId: user.userId }).exec();
+
+    // 👤 Employee sees only own leaves
+    return this.leaveModel
+      .find({ userId: user.userId })
+      .populate('approvedBy', 'firstName lastName email')
+      .sort({ createdAt: -1 })
+      .exec();
   }
 
+  // ✅ Approve / Reject leave
   async updateLeaveStatus(
     user: { userId: string; customPermissions: Record<string, string[]> },
     id: string,
     status: string,
   ) {
-    console.log(id);
     const validStatuses = ['Pending', 'Approved', 'Rejected'];
     if (!validStatuses.includes(status)) {
       throw new BadRequestException(
@@ -64,7 +119,6 @@ export class LeaveService {
       );
     }
 
-    // Check if the user has 'update' permission for the 'leaves' resource
     if (!user.customPermissions['leaves']?.includes('update')) {
       throw new ForbiddenException(
         'You do not have permission to update leave status',
@@ -73,7 +127,10 @@ export class LeaveService {
 
     const leave = await this.leaveModel.findByIdAndUpdate(
       id,
-      { status },
+      {
+        status,
+        approvedBy: status === 'Approved' ? user.userId : null,
+      },
       { new: true },
     );
 
