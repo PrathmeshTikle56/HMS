@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const API_KEY = 'AIzaSyDo4KFzeRdq6KrqYJFmwKwZ--fq-B-uh-s'; // replace this
-const CALENDAR_ID = 'en.indian#holiday@group.v.calendar.google.com';
+const API_KEY = 'YOUR_API_KEY'; // replace this
+const CALENDAR_ID = 'CALENDER_ID';
 
 export const getUpcomingHolidays = async () => {
   const timeMin = new Date().toISOString(); // today's date
