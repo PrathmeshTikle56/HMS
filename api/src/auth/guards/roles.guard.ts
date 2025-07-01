@@ -8,10 +8,11 @@ export class RolesGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<string[]>(
-      ROLES_KEY,
+      ROLES_KEY,  
       [context.getHandler(), context.getClass()],
     );
 
+    console.log('accepted');
     if (!requiredRoles || requiredRoles.length === 0) {
       return true; // No roles required => open access
     }

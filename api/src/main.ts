@@ -4,8 +4,6 @@ import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import * as express from 'express';
 import { join } from 'path';
-
-
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 

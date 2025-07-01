@@ -1,8 +1,8 @@
 import {
   Injectable,
   UnauthorizedException,
-  BadRequestException,
   NotFoundException,
+ BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -14,12 +14,14 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateCompleteProfileDto } from './dto/update-complete-profile.dto';
 import { PERMISSIONS } from './constants/permissions.constant';
+import { EmailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private jwtService: JwtService,
+    private emailService: EmailService,
   ) {}
 
   async isFirstUser(): Promise<boolean> {
@@ -60,7 +62,8 @@ export class AuthService {
     });
   
     const savedUser = await createdUser.save();
-  
+    await this.emailService.sendUserCredentials(registerDto.email, hashedPassword);
+
     return {
       message: `${savedUser.role} registered successfully`,
       userId: savedUser._id,
@@ -194,5 +197,31 @@ export class AuthService {
     const user = await this.userModel.findById(userId);
     return user?.profileImage;
   }
+
+  async forgotPassword(email: string) {
+  const user = await this.userModel.findOne({ email });
+  if (!user) throw new NotFoundException('User not found');
+
+  const token = this.jwtService.sign({ userId: user._id }, { expiresIn: '15m' });
+
+  await this.emailService.sendPasswordResetEmail(user.email, token);
+  return { message: 'Reset link sent to your email' };
+}
+
+
+async resetPassword(token: string, newPassword: string) {
+  try {
+    const payload = this.jwtService.verify(token);
+    const user = await this.userModel.findById(payload.userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    return { message: 'Password reset successful' };
+  } catch (e) {
+    throw new BadRequestException('Invalid or expired token');
+  }
+}
+
 
 }

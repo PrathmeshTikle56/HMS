@@ -19,6 +19,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UpdateCompleteProfileDto } from './dto/update-complete-profile.dto';
+import {Roles} from "./decorators/roles.decorator"
 
 @Controller('users')
 export class AuthController {
@@ -113,5 +114,15 @@ export class AuthController {
     const imageUrl = await this.authService.getProfileImage(id);
     return { imageUrl };
   }
-  
+@Post('forgot-password')
+async forgotPassword(@Body('email') email: string) {
+  return this.authService.forgotPassword(email);
+}
+
+@Post('reset-password')
+async resetPassword(@Body() dto: { token: string; password: string }) {
+  return this.authService.resetPassword(dto.token, dto.password);
+}
+
+
 }
