@@ -19,7 +19,10 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UpdateCompleteProfileDto } from './dto/update-complete-profile.dto';
-import {Roles} from "./decorators/roles.decorator"
+import { Express } from 'express'; 
+import { Roles } from './decorators/roles.decorator';
+import { RolesGuard } from './guards/roles.guard';
+
 
 @Controller('users')
 export class AuthController {
@@ -69,6 +72,8 @@ export class AuthController {
     };
   }
 
+  @UseGuards(JwtAuthGuard,RolesGuard)
+  @Roles("HR")
   @Get('employee/:id')
   async getEmployeeById(@Param('id') id: string) {
     return this.authService.findEmployeeById(id);
@@ -103,7 +108,9 @@ export class AuthController {
     ) {
       return this.authService.updateProfile(userId, updateUserDto);
     }
-
+  
+  @UseGuards(JwtAuthGuard,RolesGuard)
+  @Roles("HR","Admin")
   @Get('employees')
   async getEmployeesOnly() {
     return this.authService.findEmployeesOnly();
