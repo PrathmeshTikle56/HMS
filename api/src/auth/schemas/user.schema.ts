@@ -120,6 +120,12 @@ export class User {
 
   @Prop()
   wfhLeft: number;
+
+  @Prop()
+  resetOtp?: string;
+
+  @Prop()
+  resetOtpExpires?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -32,19 +32,20 @@ export class EmailService {
       console.log('Email sent successfully');
     } catch (error) {
       console.error('Error sending email:', error);
-      // Handle the error appropriately (e.g., log it, throw an exception)
     }
   }
-async sendPasswordResetEmail(email: string, token: string) {
-  const resetLink = `http://localhost:3001/reset-password/${token}`; // frontend URL
-  await this.transporter.sendMail({
-    to: email,
-    subject: 'Reset your password',
-    html: `<p>Click <a href="${resetLink}">here</a> to reset your password.</p>`,
-  });
+  
+  
+   async sendResetLinkToEmail(email: string, resetLink: string) {
+    await this.transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Reset Password Link',
+      html: `<p>Click <a href="${resetLink}">here</a> to reset your password. This link is valid for 15 minutes.</p>`,
+    });
+  }
 }
 
   
-}
 
 
