@@ -1,11 +1,14 @@
 import {
   Injectable,
-  ForbiddenException,
-  BadRequestException,
+  NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
 import { Attendance, AttendanceDocument } from './schemas/attendance.schema';
+import { Model } from 'mongoose';
+import { CheckInDto } from './dto/checkin.dto';
+import { JwtPayload } from '../auth/strategy/jwt-payload.interface';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class AttendanceService {
@@ -14,121 +17,129 @@ export class AttendanceService {
     private attendanceModel: Model<AttendanceDocument>,
   ) {}
 
-  // ✅ MARK ATTENDANCE (Location check removed)
-  async markAttendance(user, data) {
-    if (!user.customPermissions?.['attendance']?.includes('write')) {
-      throw new ForbiddenException(
-        'You do not have permission to mark attendance',
-      );
-    }
+  // ✅ 1. Check-In
+  async checkIn(user: JwtPayload, dto: CheckInDto) {
+    const todayStart = dayjs().startOf('day').toDate();
 
-    const userId = user.userId || user._id;
-    const firstName = user.firstName;
-    const lastName = user.lastName;
-
-    if (!userId || !firstName || !lastName) {
-      throw new BadRequestException('User information is incomplete.');
-    }
-
-    const today = data.date || new Date().toISOString().split('T')[0];
-
-    const existing = await this.attendanceModel.findOne({
-      userId,
-      date: today,
+    const alreadyCheckedIn = await this.attendanceModel.findOne({
+      userId: user.userId,
+      checkInTime: { $gte: todayStart },
     });
 
-    if (existing) {
-      existing.status = data.status || 'Present';
-      existing.time = data.time || new Date().toLocaleTimeString();
-      return existing.save();
+    if (alreadyCheckedIn) {
+      throw new ConflictException('Already checked in today');
     }
 
-    const attendance = new this.attendanceModel({
-      userId,
-      firstName,
-      lastName,
-      date: today,
-      time: data.time || new Date().toLocaleTimeString(),
-      status: data.status || 'Present',
+    return this.attendanceModel.create({
+      userId: user.userId,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      location: dto.location,
+      checkInTime: new Date(),
+      checkedOut: false,
+    });
+  }
+
+  // ✅ 2. Check-Out
+  async checkOut(user: JwtPayload) {
+    const todayStart = dayjs().startOf('day').toDate();
+
+    const entry = await this.attendanceModel.findOne({
+      userId: user.userId,
+      checkInTime: { $gte: todayStart },
+      checkedOut: false,
     });
 
-    return attendance.save();
-  }
-
-  // ✅ GET ATTENDANCE
-  async getAttendance(user) {
-    if (!user.customPermissions?.['attendance']?.includes('read')) {
-      throw new ForbiddenException(
-        'You do not have permission to view attendance',
-      );
+    if (!entry) {
+      throw new NotFoundException('No active check-in found today');
     }
 
-    if (user.customPermissions?.['attendance']?.includes('readAll')) {
-      return this.attendanceModel.find().sort({ date: -1 }).exec();
-    }
+    const now = new Date();
+    entry.checkOutTime = now;
+    entry.checkedOut = true;
 
-    const userId = user.userId || user._id;
-    return this.attendanceModel.find({ userId }).sort({ date: -1 }).exec();
+    // 🕒 Calculate total hours
+    const durationMs = new Date(entry.checkOutTime).getTime() - new Date(entry.checkInTime).getTime();
+    const hours = Math.floor(durationMs / (1000 * 60 * 60));
+    const minutes = Math.floor((durationMs / (1000 * 60)) % 60);
+    entry.totalHours = `${hours}h ${minutes}m`;
+
+    return entry.save();
   }
 
-  // ✅ UPDATE ATTENDANCE
-  async updateAttendance(user, attendanceId: string, data: any) {
-    if (!user.customPermissions?.['attendance']?.includes('update')) {
-      throw new ForbiddenException(
-        'You do not have permission to update attendance',
-      );
-    }
-
-    return this.attendanceModel
-      .findByIdAndUpdate(attendanceId, data, { new: true })
-      .exec();
+  // ✅ 3. Get My Attendance
+  async getMyAttendance(user: JwtPayload) {
+    return this.attendanceModel.find({ userId: user.userId }).sort({ checkInTime: -1 });
   }
 
-  // ✅ FIND BY USER
-  async findByUser(userId: string) {
-    return this.attendanceModel.find({ userId }).sort({ date: -1 }).exec();
+  // ✅ 4. Get All Attendance
+  async getAllAttendance() {
+    return this.attendanceModel.find().sort({ checkInTime: -1 });
   }
 
-  // ✅ Get today's attendance for all users
-  async getTodayAttendance(user) {
-    if (!user.customPermissions?.['attendance']?.includes('readAll')) {
-      throw new ForbiddenException(
-        "You do not have permission to view today's attendance",
-      );
-    }
-
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-
-    const records = await this.attendanceModel
-      .find({ date: { $gte: start.toISOString(), $lte: end.toISOString() } })
-      .sort({ time: 1 })
-      .populate('userId', 'firstName lastName') // ✅ Add this line
-      .exec();
-
-    return records;
+  // ✅ 5. Get by User ID
+  async getAttendanceByUser(userId: string) {
+    return this.attendanceModel.find({ userId }).sort({ checkInTime: -1 });
   }
 
-  // ✅ Get history of attendance (last 7 days)
-  async getAttendanceHistory(user) {
-    if (!user.customPermissions?.['attendance']?.includes('readAll')) {
-      throw new ForbiddenException(
-        'You do not have permission to view history',
-      );
-    }
+  // ✅ 6. Stats: Present / Absent / Leaves
+  async getAttendanceStats() {
+    const todayStart = dayjs().startOf('day').toDate();
+    const todayEnd = dayjs().endOf('day').toDate();
 
-    const from = new Date();
-    from.setDate(from.getDate() - 7);
-    from.setHours(0, 0, 0, 0);
+    const records = await this.attendanceModel.find({
+      checkInTime: { $gte: todayStart, $lte: todayEnd },
+    });
 
-    const records = await this.attendanceModel
-      .find({ date: { $gte: from.toISOString() } })
-      .sort({ date: -1, time: 1 })
-      .populate('userId', 'firstName lastName') // ✅ Add this line
-      .exec();
+    const present = records.length;
+    const leaves = records.filter((r) => r.leave === true).length;
+    const absent = 0; // For now (unless using a scheduler)
 
-    return records;
+    return {
+      presentCount: present,
+      leaveCount: leaves,
+      absentCount: absent,
+    };
+  }
+
+  // ✅ 7. Bulk Upload
+  async bulkUpload() {
+    // ⛔ Implement CSV/Excel parsing separately
+    return { message: 'Bulk upload not implemented yet' };
+  }
+
+  // ✅ 8. Delete Attendance
+  async deleteAttendance(id: string) {
+    const result = await this.attendanceModel.findByIdAndDelete(id);
+    if (!result) throw new NotFoundException('Attendance not found');
+    return { message: 'Deleted successfully' };
+  }
+
+  // ✅ 9. Update by ID
+  async updateAttendance(id: string, dto: Partial<CheckInDto>) {
+    const updated = await this.attendanceModel.findByIdAndUpdate(id, { $set: dto }, { new: true });
+    if (!updated) throw new NotFoundException('Attendance not found');
+    return updated;
+  }
+
+  // ✅ 10. Get Today Summary (Admin Dashboard)
+  async getTodaySummary() {
+    const todayStart = dayjs().startOf('day').toDate();
+    const todayEnd = dayjs().endOf('day').toDate();
+
+    const records = await this.attendanceModel.find({
+      checkInTime: { $gte: todayStart, $lte: todayEnd },
+    });
+
+    const present = records.length;
+    const leaves = records.filter((r) => r.leave === true).length;
+    const absent = 0; // You can calculate based on registered users
+
+    return {
+      presentCount: present,
+      leaveCount: leaves,
+      absentCount: absent,
+    };
   }
 }

@@ -22,12 +22,17 @@ export class PermissionsGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
-    const userPermissions =
-      PERMISSIONS[user.role]?.[requiredPermissions.resource] || [];
+    const resource = requiredPermissions.resource;
+    const action = requiredPermissions.action;
 
-    if (!userPermissions.includes(requiredPermissions.action)) {
+    const roleBasedPerms = PERMISSIONS[user.role]?.[resource] || [];
+    const customPerms = user.customPermissions?.[resource] || [];
+
+    const allPerms = Array.from(new Set([...roleBasedPerms, ...customPerms]));
+
+    if (!allPerms.includes(action)) {
       throw new ForbiddenException(
-        `You do not have permission to ${requiredPermissions.action} ${requiredPermissions.resource}`,
+        `You do not have permission to ${action} ${resource}`,
       );
     }
 

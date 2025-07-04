@@ -1,27 +1,39 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import * as mongoose from 'mongoose';
+
+export type AttendanceDocument = Attendance & Document;
 
 @Schema({ timestamps: true })
 export class Attendance {
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
-  userId: mongoose.Schema.Types.ObjectId;
-
   @Prop({ required: true })
-  firstName: string;
-
-  @Prop({ required: true })
-  lastName: string;
-
-  @Prop({ required: true })
-  date: string; // Format: YYYY-MM-DD
-
-  @Prop({ default: 'Absent', enum: ['Present', 'Absent', 'Late'] })
-  status: string;
+  userId: string;
 
   @Prop()
-  time: string;
+  firstName: string;
+
+  @Prop()
+  lastName: string;
+
+  @Prop()
+  role: string;
+
+  @Prop({ required: true })
+  checkInTime: Date;
+
+  @Prop()
+  checkOutTime: Date;
+
+  @Prop()
+  totalHours: string; // e.g. "8h 45m"
+
+  @Prop()
+  location: string;
+
+  @Prop({ default: false })
+  checkedOut: boolean;
+
+  @Prop({ default: false })
+  leave: boolean; // optional field in case of leave marking
 }
 
-export type AttendanceDocument = Attendance & Document;
 export const AttendanceSchema = SchemaFactory.createForClass(Attendance);
