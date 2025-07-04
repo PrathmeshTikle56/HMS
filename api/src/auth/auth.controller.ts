@@ -9,6 +9,8 @@ import {
   Param,
   UseInterceptors,
   UploadedFile,
+  HttpCode,
+  HttpStatus
   
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -24,6 +26,7 @@ import { Roles } from './decorators/roles.decorator';
 import { RolesGuard } from './guards/roles.guard';
 import { ForgotPasswordDto } from './dto/forgot-reset-password.dto';
 import { ResetPasswordDto } from './dto/forgot-reset-password.dto';
+import { SelfOrRoleGuard } from './guards/self-or-role.guard';
 
 
 @Controller('users')
@@ -38,6 +41,7 @@ export class AuthController {
 
   @Post('register')
   @UseGuards(JwtAuthGuard)
+  @HttpCode(201)
   async register(
     @Req() req: any,
     @Body() registerDto: RegisterDto,
@@ -47,6 +51,7 @@ export class AuthController {
 
   @Post('complete-profile/:userId')
   @UseGuards(JwtAuthGuard)
+  @HttpCode(201)
   async updateCompleteProfile(
     @Req() req: any,
     @Param('userId') userId: string, // Optional from body
@@ -57,11 +62,13 @@ export class AuthController {
   }
 
   @Post('login')
+  @HttpCode(200)
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
 
   @Get('me')
+  @HttpCode(200)
   @UseGuards(JwtAuthGuard)
   async getCurrentUser(@Req() req: any) {
     return {
@@ -74,9 +81,10 @@ export class AuthController {
     };
   }
 
-  @UseGuards(JwtAuthGuard,RolesGuard)
-  @Roles("HR")
+  @UseGuards(JwtAuthGuard,RolesGuard,SelfOrRoleGuard)
+  @Roles("Employee","HR","Admin","SuperAdmin")
   @Get('employee/:id')
+  @HttpCode(200)
   async getEmployeeById(@Param('id') id: string) {
     return this.authService.findEmployeeById(id);
   }
@@ -102,7 +110,8 @@ export class AuthController {
     return this.authService.updateProfileImage(targetUserId, imageUrl);
   }
 
-
+  @UseGuards(JwtAuthGuard,RolesGuard,SelfOrRoleGuard)
+  @Roles("Employee","HR","Admin","SuperAdmin")
   @Patch('employee/:id')
   async updateProfile(
       @Param('id') userId: string,
@@ -111,8 +120,8 @@ export class AuthController {
       return this.authService.updateProfile(userId, updateUserDto);
     }
   
-  @UseGuards(JwtAuthGuard,RolesGuard)
-  @Roles("HR","Admin")
+  @UseGuards(JwtAuthGuard,RolesGuard,SelfOrRoleGuard)
+  @Roles("HR","Admin","SuperAdmin")
   @Get('employees')
   async getEmployeesOnly() {
     return this.authService.findEmployeesOnly();
