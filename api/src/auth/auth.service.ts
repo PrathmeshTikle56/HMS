@@ -2,13 +2,12 @@ import {
   Injectable,
   UnauthorizedException,
   NotFoundException,
- BadRequestException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-
 import { User, UserDocument } from './schemas/user.schema';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -34,24 +33,23 @@ export class AuthService {
     if (existingUser) {
       throw new UnauthorizedException('User already exists with this email');
     }
+
     const totalUsers = await this.userModel.countDocuments();
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-  
+
     let role = 'Employee';
     let customPermissions: Record<string, string[]> = {};
-  
+
     if (totalUsers === 0) {
-      // First user becomes SuperAdmin
       role = 'SuperAdmin';
       customPermissions = PERMISSIONS[role];
     } else {
-      // Later users — role is selected from DTO
       role = registerDto.role || 'Employee';
       customPermissions = PERMISSIONS[role] || {};
     }
-  
+
     const employeeId = `EMP${Date.now()}${Math.floor(Math.random() * 10000)}`;
-  
+
     const createdUser = new this.userModel({
       email: registerDto.email,
       password: hashedPassword,
@@ -60,9 +58,9 @@ export class AuthService {
       customPermissions,
       employeeId,
     });
-  
+
     const savedUser = await createdUser.save();
-    await this.emailService.sendUserCredentials(registerDto.email, hashedPassword);
+    await this.emailService.sendUserCredentials(registerDto.email, registerDto.password);
 
     return {
       message: `${savedUser.role} registered successfully`,
@@ -72,15 +70,10 @@ export class AuthService {
       employeeId: savedUser.employeeId,
     };
   }
-  
-  
 
   async updateCompleteProfile(userId: string, dto: UpdateCompleteProfileDto) {
-    // console.log(userId);
-
     const { basicDetails, educationDetails, bankDetails } = dto;
 
-    // Determine leave policy based on employmentType
     let paidLeaveAllowed = 0;
     let wfhAllowed = 0;
 
@@ -115,17 +108,13 @@ export class AuthService {
     return updatedUser;
   }
 
-  async validateUser(
-    email: string,
-    pass: string,
-  ): Promise<UserDocument | null> {
+  async validateUser(email: string, pass: string): Promise<UserDocument | null> {
     const user = await this.userModel.findOne({ email });
     if (user && (await bcrypt.compare(pass, user.password))) {
       return user;
     }
     return null;
   }
-
 
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
@@ -140,17 +129,17 @@ export class AuthService {
       role: user.role,
       customPermissions: user.customPermissions,
       employeeId: user.employeeId,
-      name:user.firstName + " " + user.lastName,
+      name: user.firstName + ' ' + user.lastName,
     };
 
     return {
-      accessToken: this.jwtService.sign(payload),
+      accessToken: this.jwtService.sign(payload, { expiresIn: '8h' }),
       user: {
         _id: user._id,
         email: user.email,
         role: user.role,
         employeeId: user.employeeId,
-        name:user.firstName + " " + user.lastName,
+        name: user.firstName + ' ' + user.lastName,
       },
     };
   }
@@ -162,28 +151,24 @@ export class AuthService {
   }
 
   async findEmployeeById(userId: string) {
-    const user = await this.userModel.findById(userId);
-    return user;
+    return this.userModel.findById(userId);
   }
 
   async updateProfile(userId: string, updateUserDto: UpdateCompleteProfileDto) {
     const user = await this.userModel.findById(userId);
     if (!user) throw new NotFoundException('User not found');
 
-    // Flatten the nested DTOs into a single update object
     const flatUpdate = {
       ...(updateUserDto.basicDetails || {}),
       ...(updateUserDto.bankDetails || {}),
       ...(updateUserDto.educationDetails || {}),
     };
 
-    // Update the user directly with flattened data
     Object.assign(user, flatUpdate);
-
     await user.save();
+
     return { message: 'Profile updated successfully', user };
   }
-
 
   async updateProfileImage(userId: string, imageUrl: string) {
     return this.userModel.findByIdAndUpdate(
@@ -193,35 +178,47 @@ export class AuthService {
     );
   }
 
-  async getProfileImage(userId: string){
+  async getProfileImage(userId: string) {
     const user = await this.userModel.findById(userId);
     return user?.profileImage;
   }
 
-  async forgotPassword(email: string) {
-  const user = await this.userModel.findOne({ email });
-  if (!user) throw new NotFoundException('User not found');
-
-  const token = this.jwtService.sign({ userId: user._id }, { expiresIn: '15m' });
-
-  await this.emailService.sendPasswordResetEmail(user.email, token);
-  return { message: 'Reset link sent to your email' };
-}
-
-
-async resetPassword(token: string, newPassword: string) {
-  try {
-    const payload = this.jwtService.verify(token);
-    const user = await this.userModel.findById(payload.userId);
+  async sendResetPasswordLink(email: string) {
+    const user = await this.userModel.findOne({ email });
     if (!user) throw new NotFoundException('User not found');
 
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
-    return { message: 'Password reset successful' };
-  } catch (e) {
-    throw new BadRequestException('Invalid or expired token');
+    const token = this.jwtService.sign(
+      { userId: user._id },
+      {
+        secret: process.env.JWT_RESET_SECRET,
+        expiresIn: '10m',
+      },
+    );
+
+    const resetLink = `http://localhost:3001/reset-password?token=${token}`;
+    await this.emailService.sendResetLinkToEmail(email, resetLink);
+
+    return { message: 'Reset link sent successfully' };
   }
-}
 
+  async resetPassword(token: string, newPassword: string) {
+    try {
+      console.log(token)
+      const payload = this.jwtService.verify(token, {
+        secret: process.env.JWT_RESET_SECRET,
+      });
 
+      const user = await this.userModel.findById(payload.userId);
+      if (!user) throw new NotFoundException('User not found');
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await this.userModel.findByIdAndUpdate(payload.userId, {
+        password: hashedPassword,
+      });
+
+      return { message: 'Password reset successfully' };
+    } catch (err) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+  }
 }

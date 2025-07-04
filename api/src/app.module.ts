@@ -8,7 +8,6 @@ import { ManageUsersModule } from './manage-users/manage-users.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { PayrollModule } from './payroll/payroll.module';
 import { MulterModule } from '@nestjs/platform-express';
-import { CalendarModule } from './google-calender-api/google-calender.module';
 
 @Module({
   imports: [
@@ -41,7 +40,6 @@ import { CalendarModule } from './google-calender-api/google-calender.module';
     ManageUsersModule,
     AttendanceModule,
     PayrollModule,
-    CalendarModule,
   ],
 })
 export class AppModule {}

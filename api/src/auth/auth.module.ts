@@ -8,6 +8,8 @@ import { AuthService } from './auth.service';
 import { EmailModule } from 'src/mail/mail.module';
 import { User, UserSchema } from './schemas/user.schema';
 import { JwtStrategy } from './strategy/jwt.strategy';
+import { ForgotPasswordDto } from './dto/forgot-reset-password.dto';
+import { ResetPasswordDto } from './dto/forgot-reset-password.dto';
 
 @Module({
   imports: [

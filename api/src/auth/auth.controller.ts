@@ -22,6 +22,8 @@ import { UpdateCompleteProfileDto } from './dto/update-complete-profile.dto';
 import { Express } from 'express'; 
 import { Roles } from './decorators/roles.decorator';
 import { RolesGuard } from './guards/roles.guard';
+import { ForgotPasswordDto } from './dto/forgot-reset-password.dto';
+import { ResetPasswordDto } from './dto/forgot-reset-password.dto';
 
 
 @Controller('users')
@@ -121,15 +123,15 @@ export class AuthController {
     const imageUrl = await this.authService.getProfileImage(id);
     return { imageUrl };
   }
-@Post('forgot-password')
-async forgotPassword(@Body('email') email: string) {
-  return this.authService.forgotPassword(email);
-}
+  @Post('forgot-password')
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
+    return this.authService.sendResetPasswordLink(body.email);
+  }
 
-@Post('reset-password')
-async resetPassword(@Body() dto: { token: string; password: string }) {
-  return this.authService.resetPassword(dto.token, dto.password);
-}
+  @Post('reset-password')
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.token, dto.newPassword);
+  }
 
 
 }
