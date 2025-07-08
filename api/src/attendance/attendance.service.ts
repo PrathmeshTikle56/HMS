@@ -17,7 +17,6 @@ export class AttendanceService {
     private attendanceModel: Model<AttendanceDocument>,
   ) {}
 
-  // ✅ 1. Check-In
   async checkIn(user: JwtPayload, dto: CheckInDto) {
     const todayStart = dayjs().startOf('day').toDate();
 
@@ -41,7 +40,6 @@ export class AttendanceService {
     });
   }
 
-  // ✅ 2. Check-Out
   async checkOut(user: JwtPayload) {
     const todayStart = dayjs().startOf('day').toDate();
 
@@ -59,7 +57,6 @@ export class AttendanceService {
     entry.checkOutTime = now;
     entry.checkedOut = true;
 
-    // 🕒 Calculate total hours
     const durationMs = new Date(entry.checkOutTime).getTime() - new Date(entry.checkInTime).getTime();
     const hours = Math.floor(durationMs / (1000 * 60 * 60));
     const minutes = Math.floor((durationMs / (1000 * 60)) % 60);
@@ -68,22 +65,21 @@ export class AttendanceService {
     return entry.save();
   }
 
-  // ✅ 3. Get My Attendance
+ 
   async getMyAttendance(user: JwtPayload) {
     return this.attendanceModel.find({ userId: user.userId }).sort({ checkInTime: -1 });
   }
 
-  // ✅ 4. Get All Attendance
+  
   async getAllAttendance() {
     return this.attendanceModel.find().sort({ checkInTime: -1 });
   }
 
-  // ✅ 5. Get by User ID
+
   async getAttendanceByUser(userId: string) {
     return this.attendanceModel.find({ userId }).sort({ checkInTime: -1 });
   }
 
-  // ✅ 6. Stats: Present / Absent / Leaves
   async getAttendanceStats() {
     const todayStart = dayjs().startOf('day').toDate();
     const todayEnd = dayjs().endOf('day').toDate();
@@ -102,28 +98,24 @@ export class AttendanceService {
       absentCount: absent,
     };
   }
-
-  // ✅ 7. Bulk Upload
   async bulkUpload() {
     // ⛔ Implement CSV/Excel parsing separately
     return { message: 'Bulk upload not implemented yet' };
   }
 
-  // ✅ 8. Delete Attendance
   async deleteAttendance(id: string) {
     const result = await this.attendanceModel.findByIdAndDelete(id);
     if (!result) throw new NotFoundException('Attendance not found');
     return { message: 'Deleted successfully' };
   }
 
-  // ✅ 9. Update by ID
   async updateAttendance(id: string, dto: Partial<CheckInDto>) {
     const updated = await this.attendanceModel.findByIdAndUpdate(id, { $set: dto }, { new: true });
     if (!updated) throw new NotFoundException('Attendance not found');
     return updated;
   }
 
-  // ✅ 10. Get Today Summary (Admin Dashboard)
+  
   async getTodaySummary() {
     const todayStart = dayjs().startOf('day').toDate();
     const todayEnd = dayjs().endOf('day').toDate();

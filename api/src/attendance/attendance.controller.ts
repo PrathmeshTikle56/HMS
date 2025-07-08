@@ -22,7 +22,7 @@ import { RequestWithUser } from '../types/RequestWithUser';
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
-  // ✅ 1. Check-In
+  // 1. Check-In
   @Post('check-in')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions({ resource: 'attendance', action: 'write' })
@@ -30,7 +30,7 @@ export class AttendanceController {
     return this.attendanceService.checkIn(req.user, dto);
   }
 
-  // ✅ 2. Check-Out
+  // 2. Check-Out
   @Put('check-out')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions({ resource: 'attendance', action: 'write' })
@@ -38,7 +38,7 @@ export class AttendanceController {
     return this.attendanceService.checkOut(user);
   }
 
-  // ✅ 3. Get My Attendance
+  // 3. Get My Attendance
   @Get('my')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions({ resource: 'attendance', action: 'read' })
@@ -46,7 +46,7 @@ export class AttendanceController {
     return this.attendanceService.getMyAttendance(user);
   }
 
-  // ✅ 4. Get All Attendance
+  // 4. Get All Attendance
   @Get('all')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions({ resource: 'attendance', action: 'read' })
@@ -54,7 +54,7 @@ export class AttendanceController {
     return this.attendanceService.getAllAttendance();
   }
 
-  // ✅ 5. Get by User ID
+  // 5. Get by User ID
   @Get(':userId')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions({ resource: 'attendance', action: 'read' })
@@ -62,7 +62,7 @@ export class AttendanceController {
     return this.attendanceService.getAttendanceByUser(userId);
   }
 
-  // ✅ 6. Attendance Stats
+  // 6. Attendance Stats
   @Get('stats')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions({ resource: 'attendance', action: 'read' })
@@ -70,7 +70,7 @@ export class AttendanceController {
     return this.attendanceService.getAttendanceStats();
   }
 
-  // ✅ 7. Bulk Upload
+  // 7. Bulk Upload
   @Post('bulk-upload')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions({ resource: 'attendance', action: 'write' })
@@ -78,7 +78,7 @@ export class AttendanceController {
     return this.attendanceService.bulkUpload();
   }
 
-  // ✅ 8. Delete Attendance
+  // 8. Delete Attendance
   @Delete(':id')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions({ resource: 'attendance', action: 'delete' })
@@ -86,7 +86,7 @@ export class AttendanceController {
     return this.attendanceService.deleteAttendance(id);
   }
 
-  // ✅ 9. Update Attendance
+  // 9. Update Attendance
   @Put(':id')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions({ resource: 'attendance', action: 'write' })
@@ -97,7 +97,7 @@ export class AttendanceController {
     return this.attendanceService.updateAttendance(id, dto);
   }
 
-  // ✅ 10. Get Today Summary
+  // 10. Get Today Summary
   @Get('today')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions({ resource: 'attendance', action: 'read' })
