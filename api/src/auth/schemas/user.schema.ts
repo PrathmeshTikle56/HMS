@@ -1,8 +1,24 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { Document } from 'mongoose';
 
-
 export type UserDocument = User & Document;
+
+@Schema({ _id: false })
+class UserLeaves {
+  @Prop({ default: 1.5 })
+  paidAllowed: number;
+
+  @Prop({ default: 1 })
+  wfhAllowed: number;
+
+  @Prop({ default: 1 })
+  wfhLeft: number;
+
+  @Prop({ default: 1.5 })
+  plLeft: number;
+}
+
+const UserLeavesSchema = SchemaFactory.createForClass(UserLeaves);
 
 @Schema()
 export class User {
@@ -109,23 +125,17 @@ export class User {
   @Prop()
   accountHolderName: string;
 
-  @Prop()
-  paidLeaveAllowed: number;
-
-  @Prop()
-  wfhAllowed: number;
-
-  @Prop()
-  plLeft: number;
-
-  @Prop()
-  wfhLeft: number;
+  @Prop({ type: UserLeavesSchema, default: {} })
+  leaves: UserLeaves;
 
   @Prop()
   resetOtp?: string;
 
   @Prop()
   resetOtpExpires?: Date;
+
+  @Prop({ default: false })
+  isDeleted: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

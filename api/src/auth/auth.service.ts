@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -14,11 +15,13 @@ import { LoginDto } from './dto/login.dto';
 import { UpdateCompleteProfileDto } from './dto/update-complete-profile.dto';
 import { PERMISSIONS } from './constants/permissions.constant';
 import { EmailService } from 'src/mail/mail.service';
+// import { DeleteRequest, DeleteRequestDocument } from './schemas/delete-request.schema';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    // @InjectModel(DeleteRequest.name) private deleteRequestModel: Model<DeleteRequestDocument>,
     private jwtService: JwtService,
     private emailService: EmailService,
   ) {}
@@ -71,6 +74,42 @@ export class AuthService {
     };
   }
 
+  async validateUser(email: string, pass: string): Promise<UserDocument | null> {
+    const user = await this.userModel.findOne({ email });
+    if (user && (await bcrypt.compare(pass, user.password))) {
+      return user;
+    }
+    return null;
+  }
+
+  async login(loginDto: LoginDto) {
+    const user = await this.validateUser(loginDto.email, loginDto.password);
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const payload = {
+      userId: user._id,
+      email: user.email,
+      role: user.role,
+      customPermissions: user.customPermissions,
+      employeeId: user.employeeId,
+      name: user.firstName + ' ' + user.lastName,
+    };
+
+    return {
+      accessToken: this.jwtService.sign(payload, { expiresIn: '8h' }),
+      user: {
+        _id: user._id,
+        email: user.email,
+        role: user.role,
+        employeeId: user.employeeId,
+        name: user.firstName + ' ' + user.lastName,
+      },
+    };
+  }
+
   async updateCompleteProfile(userId: string, dto: UpdateCompleteProfileDto) {
     const { basicDetails, educationDetails, bankDetails } = dto;
 
@@ -108,50 +147,23 @@ export class AuthService {
     return updatedUser;
   }
 
-  async validateUser(email: string, pass: string): Promise<UserDocument | null> {
-    const user = await this.userModel.findOne({ email });
-    if (user && (await bcrypt.compare(pass, user.password))) {
-      return user;
-    }
-    return null;
-  }
-
-  async login(loginDto: LoginDto) {
-    const user = await this.validateUser(loginDto.email, loginDto.password);
-
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+  async findEmployeesOnly(userRole:string) {
+    if (userRole==="SuperAdmin"){
+          return this.userModel.find({ role: { $nin: ['SuperAdmin'] }, isDeleted: { $ne: true } });
+    }else if(userRole==="Admin"){
+                return this.userModel.find({ role: { $nin: ['SuperAdmin','Admin'] }, isDeleted: { $ne: true } });
+    }else if(userRole==="HR"){
+                return this.userModel.find({ role: { $nin: ['HR','SuperAdmin','Admin'] }, isDeleted: { $ne: true } });
     }
 
-    const payload = {
-      userId: user._id,
-      email: user.email,
-      role: user.role,
-      customPermissions: user.customPermissions,
-      employeeId: user.employeeId,
-      name: user.firstName + ' ' + user.lastName,
-    };
-
-    return {
-      accessToken: this.jwtService.sign(payload, { expiresIn: '8h' }),
-      user: {
-        _id: user._id,
-        email: user.email,
-        role: user.role,
-        employeeId: user.employeeId,
-        name: user.firstName + ' ' + user.lastName,
-      },
-    };
-  }
-
-  async findEmployeesOnly() {
-    return this.userModel.find({
-      role: { $nin: ['SuperAdmin', 'Admin', 'HR'] },
-    });
   }
 
   async findEmployeeById(userId: string) {
-    return this.userModel.findById(userId);
+    const user = await this.userModel.findById(userId);
+    if (!user || user.isDeleted) {
+      throw new NotFoundException('User not found or deleted');
+    }
+    return user;
   }
 
   async updateProfile(userId: string, updateUserDto: UpdateCompleteProfileDto) {
@@ -171,11 +183,7 @@ export class AuthService {
   }
 
   async updateProfileImage(userId: string, imageUrl: string) {
-    return this.userModel.findByIdAndUpdate(
-      userId,
-      { profileImage: imageUrl },
-      { new: true },
-    );
+    return this.userModel.findByIdAndUpdate(userId, { profileImage: imageUrl }, { new: true });
   }
 
   async getProfileImage(userId: string) {
@@ -203,7 +211,6 @@ export class AuthService {
 
   async resetPassword(token: string, newPassword: string) {
     try {
-      console.log(token)
       const payload = this.jwtService.verify(token, {
         secret: process.env.JWT_RESET_SECRET,
       });
@@ -221,4 +228,44 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired token');
     }
   }
+
+ async deleteUser(userId: string, requestedBy: UserDocument) {
+  if (requestedBy.role !== 'SuperAdmin') {
+    throw new ForbiddenException('Only SuperAdmin can delete users');
+  }
+
+  const user = await this.userModel.findById(userId);
+  if (!user) throw new NotFoundException('User not found');
+
+  if (user.isDeleted) {
+    throw new BadRequestException('User already deleted');
+  }
+
+  user.isDeleted = true;
+  await user.save();
+
+  return { message: 'User soft deleted successfully' };
+}
+
+
+  // async requestDelete(userId: string, requestedById: string) {
+  //   const existing = await this.deleteRequestModel.findOne({
+  //     userId,
+  //     requestedBy: requestedById,
+  //     status: 'pending',
+  //   });
+
+  //   if (existing) {
+  //     throw new BadRequestException('Delete request already pending');
+  //   }
+
+  //   const newRequest = new this.deleteRequestModel({
+  //     userId,
+  //     requestedBy: requestedById,
+  //     status: 'pending',
+  //   });
+
+  //   await newRequest.save();
+  //   return { message: 'Delete request submitted for approval' };
+  // }
 }

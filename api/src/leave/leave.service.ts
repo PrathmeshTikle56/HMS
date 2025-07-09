@@ -6,11 +6,13 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Leave, LeaveDocument } from './schemas/leave.schema';
+// import { User, UserDocument } from 'src/auth/schemas/user.schema';
 
 @Injectable()
 export class LeaveService {
   constructor(
     @InjectModel(Leave.name) private leaveModel: Model<LeaveDocument>,
+    // @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
 
   // 🧠 Utility to calculate working leave days
@@ -101,7 +103,10 @@ export class LeaveService {
     // 👤 Employee sees only own leaves
     return this.leaveModel
       .find({ userId: user.userId })
-      .populate('approvedBy', 'firstName lastName email')
+      .populate([
+        { path: 'approvedBy', select: 'firstName lastName' },
+        { path: 'userId', select: 'firstName lastName leaves' },
+      ])
       .sort({ createdAt: -1 })
       .exec();
   }
@@ -132,8 +137,7 @@ export class LeaveService {
         approvedBy: status === 'Approved' ? user.userId : null,
       },
       { new: true },
-    );
-
+     )
     if (!leave) {
       throw new BadRequestException('Leave request not found');
     }
@@ -141,3 +145,14 @@ export class LeaveService {
     return leave;
   }
 }
+
+    // const currentUser = await this.userModel.findByIdAndUpdate(
+    //   user.userId,
+    //   {
+    //     ...user,
+    //     leaves:{
+    //       ...user?.leaves,
+    //       plLeft:
+    //     }        
+    //   }      
+    // )s

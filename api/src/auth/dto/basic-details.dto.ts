@@ -1,4 +1,31 @@
-import { IsString, IsDateString, IsNotEmpty, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsDateString,
+  IsNotEmpty,
+  IsOptional,
+  IsObject,
+  IsNumber,
+  IsDefined,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+export class LeavesDto {
+  @IsNumber()
+  @IsOptional()
+  paidAllowed?: number;
+
+  @IsNumber()
+  @IsOptional()
+  plLeft?: number;
+
+  @IsNumber()
+  @IsOptional()
+  wfhAllowed?: number;
+
+  @IsNumber()
+  @IsOptional()
+  wfhLeft?: number;
+}
 
 export class BasicDetailsDto {
   @IsString()
@@ -23,41 +50,48 @@ export class BasicDetailsDto {
 
   @IsString()
   @IsOptional()
-  address: string;
+  address?: string;
 
   @IsString()
   @IsOptional()
-  city: string;
+  city?: string;
 
   @IsString()
   @IsOptional()
-  state: string;
+  state?: string;
 
   @IsString()
   @IsOptional()
-  zipCode: string;
+  zipCode?: string;
 
   @IsString()
   @IsOptional()
-  country: string;
+  country?: string;
 
   @IsDateString()
   @IsOptional()
-  joiningDate: Date;
+  joiningDate?: Date;
 
   @IsString()
   @IsOptional()
-  designation: string;
+  designation?: string;
 
   @IsString()
   @IsOptional()
-  department: string;
+  department?: string;
 
   @IsString()
   @IsOptional()
-  profileImage: string;
+  profileImage?: string;
 
   @IsString()
   @IsOptional()
-  employmentType: string;
+  employmentType?: string;
+
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => LeavesDto) 
+  leaves: LeavesDto;
 }
+
+
