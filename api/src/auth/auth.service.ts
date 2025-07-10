@@ -74,19 +74,22 @@ export class AuthService {
     };
   }
 
-  async validateUser(email: string, pass: string): Promise<UserDocument | null> {
-    const user = await this.userModel.findOne({ email });
-    if (user && (await bcrypt.compare(pass, user.password))) {
-      return user;
-    }
-    return null;
+ async validateUser(email: string, pass: string): Promise<UserDocument | null> {
+  const user = await this.userModel.findOne({
+    email,
+    isDeleted: { $ne: true } })
+
+  if (user && (await bcrypt.compare(pass, user.password))) {
+    return user;
   }
+
+  return null;
+}
 
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
-
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid credentials or User not exists');
     }
 
     const payload = {
@@ -147,16 +150,21 @@ export class AuthService {
     return updatedUser;
   }
 
-  async findEmployeesOnly(userRole:string) {
-    if (userRole==="SuperAdmin"){
-          return this.userModel.find({ role: { $nin: ['SuperAdmin'] }, isDeleted: { $ne: true } });
-    }else if(userRole==="Admin"){
-                return this.userModel.find({ role: { $nin: ['SuperAdmin','Admin'] }, isDeleted: { $ne: true } });
-    }else if(userRole==="HR"){
-                return this.userModel.find({ role: { $nin: ['HR','SuperAdmin','Admin'] }, isDeleted: { $ne: true } });
-    }
+async findEmployeesOnly(userRole: string, showDeleted = false) {
+  const baseQuery: any = {
+    isDeleted: showDeleted ? true : { $ne: true }, // either get deleted users or active ones
+  };
 
+  if (userRole === 'SuperAdmin') {
+    baseQuery.role = { $nin: ['SuperAdmin'] };
+  } else if (userRole === 'Admin') {
+    baseQuery.role = { $nin: ['SuperAdmin', 'Admin'] };
+  } else if (userRole === 'HR') {
+    baseQuery.role = { $nin: ['SuperAdmin', 'Admin', 'HR'] };
   }
+
+  return this.userModel.find(baseQuery);
+}
 
   async findEmployeeById(userId: string) {
     const user = await this.userModel.findById(userId);
@@ -229,21 +237,14 @@ export class AuthService {
     }
   }
 
- async deleteUser(userId: string, requestedBy: UserDocument) {
-  if (requestedBy.role !== 'SuperAdmin') {
-    throw new ForbiddenException('Only SuperAdmin can delete users');
-  }
-
+ async deleteUser(userId: string) {
   const user = await this.userModel.findById(userId);
   if (!user) throw new NotFoundException('User not found');
-
   if (user.isDeleted) {
     throw new BadRequestException('User already deleted');
   }
-
   user.isDeleted = true;
   await user.save();
-
   return { message: 'User soft deleted successfully' };
 }
 

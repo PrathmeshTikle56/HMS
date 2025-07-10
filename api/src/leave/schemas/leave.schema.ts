@@ -8,7 +8,7 @@ export class Leave {
   @Prop({ required: true })
   startDate: Date;
 
-  @Prop({ required: true })
+  @Prop()
   endDate: Date;
 
   @Prop({ required: true })
@@ -26,8 +26,14 @@ export class Leave {
   })
   leaveType: string;
 
-  @Prop({ type: Number, required: true })
+  @Prop()
   noOfDays: number;
+
+  @Prop()
+  paidDays: number;
+
+  @Prop()
+  unpaidDays: number;
 
   @Prop({ default: 'Pending', enum: ['Pending', 'Approved', 'Rejected'] })
   status: string;

@@ -2,23 +2,25 @@ import {
   Injectable,
   ForbiddenException,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Leave, LeaveDocument } from './schemas/leave.schema';
-// import { User, UserDocument } from 'src/auth/schemas/user.schema';
+import { User, UserDocument } from '../auth/schemas/user.schema';
+import mongoose from 'mongoose';
 
 @Injectable()
 export class LeaveService {
   constructor(
     @InjectModel(Leave.name) private leaveModel: Model<LeaveDocument>,
-    // @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
 
   // 🧠 Utility to calculate working leave days
   private calculateLeaveDays(
-    startDate: string,
-    endDate: string,
+    startDate: Date,
+    endDate: Date,
     dayType: string,
   ): number {
     if (dayType?.toLowerCase() === 'halfday') return 0.5;
@@ -40,19 +42,17 @@ export class LeaveService {
   }
 
   // 📝 Apply for a new leave
+
   async applyLeave(
     user: { userId: string; customPermissions: Record<string, string[]> },
     data: any,
   ) {
     if (!user.customPermissions['leaves']?.includes('write')) {
-      throw new ForbiddenException(
-        'You do not have permission to apply for leave',
-      );
+      throw new ForbiddenException('You do not have permission to apply for leave');
     }
 
     const { startDate, endDate, dayType } = data;
 
-    // 🔁 Check for overlapping leave
     const overlappingLeave = await this.leaveModel.findOne({
       userId: user.userId,
       $or: [
@@ -64,20 +64,18 @@ export class LeaveService {
     });
 
     if (overlappingLeave) {
-      throw new BadRequestException(
-        'You already have a leave request for this date range',
-      );
+      throw new BadRequestException('You already have a leave request for this date range');
     }
 
-    const noOfDays = this.calculateLeaveDays(startDate, endDate, dayType);
+      let noOfDays = this.calculateLeaveDays(startDate, endDate, dayType);
 
     const leave = new this.leaveModel({
       ...data,
+      endDate: (dayType === 'halfday') ? null : endDate,
+      noOfDays,
       userId: user.userId,
       status: 'Pending',
-      noOfDays,
     });
-
     return leave.save();
   }
 
@@ -112,7 +110,7 @@ export class LeaveService {
   }
 
   // ✅ Approve / Reject leave
-  async updateLeaveStatus(
+ async updateLeaveStatus(
     user: { userId: string; customPermissions: Record<string, string[]> },
     id: string,
     status: string,
@@ -130,29 +128,43 @@ export class LeaveService {
       );
     }
 
-    const leave = await this.leaveModel.findByIdAndUpdate(
-      id,
-      {
-        status,
-        approvedBy: status === 'Approved' ? user.userId : null,
-      },
-      { new: true },
-     )
+    const leave = await this.leaveModel.findById(id);
     if (!leave) {
-      throw new BadRequestException('Leave request not found');
+      throw new NotFoundException('Leave request not found');
     }
 
+    let noOfDays = leave?.noOfDays;
+    let paidDays = 0;
+    let unpaidDays = 0;
+    if (status === 'Approved' && leave.status !== 'Approved') {
+      const userDoc = await this.userModel.findById(leave.userId);
+      if (!userDoc) {
+        throw new NotFoundException('User not found');
+      }
+
+      noOfDays = this.calculateLeaveDays(leave.startDate, leave.endDate, leave.dayType);
+      const currentPlLeft = userDoc.leaves?.plLeft ?? 0;
+      paidDays = Math.min(noOfDays, currentPlLeft);
+      unpaidDays = noOfDays - paidDays;
+
+      await this.userModel.updateOne(
+        { _id: leave.userId },
+        { $set: { 'leaves.plLeft': currentPlLeft - paidDays } },
+      );
+
+      leave.set({
+        status: 'Approved',
+        noOfDays,
+        paidDays,
+        unpaidDays,
+        approvedBy: new mongoose.Types.ObjectId(user.userId),
+      });
+    } else {
+      leave.status = status;
+    }
+    await leave.save();
+
     return leave;
-  }
 }
 
-    // const currentUser = await this.userModel.findByIdAndUpdate(
-    //   user.userId,
-    //   {
-    //     ...user,
-    //     leaves:{
-    //       ...user?.leaves,
-    //       plLeft:
-    //     }        
-    //   }      
-    // )s
+}

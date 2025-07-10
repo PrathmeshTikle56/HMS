@@ -5,12 +5,6 @@ export type UserDocument = User & Document;
 
 @Schema({ _id: false })
 class UserLeaves {
-  @Prop({ default: 1.5 })
-  paidAllowed: number;
-
-  @Prop({ default: 1 })
-  wfhAllowed: number;
-
   @Prop({ default: 1 })
   wfhLeft: number;
 

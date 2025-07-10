@@ -1,11 +1,11 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class ApplyLeaveDto {
   @IsNotEmpty()
   @IsString()
   startDate: Date;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   endDate: Date;
 
@@ -25,11 +25,19 @@ export class ApplyLeaveDto {
   @IsString()
   status: string;
 
-  @IsNotEmpty()
-  @IsString()
+  @IsOptional()
+  @IsNumber()
   noOfDays: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   approvedBy: string;
+
+  @IsOptional()
+  @IsNumber()
+  paidDays: number;
+
+  @IsNumber()
+  @IsOptional()
+  unpaidDays: number;
 }

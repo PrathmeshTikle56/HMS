@@ -12,15 +12,7 @@ import { Type } from 'class-transformer';
 export class LeavesDto {
   @IsNumber()
   @IsOptional()
-  paidAllowed?: number;
-
-  @IsNumber()
-  @IsOptional()
   plLeft?: number;
-
-  @IsNumber()
-  @IsOptional()
-  wfhAllowed?: number;
 
   @IsNumber()
   @IsOptional()
@@ -92,6 +84,7 @@ export class BasicDetailsDto {
   @ValidateNested()
   @Type(() => LeavesDto) 
   leaves: LeavesDto;
+
 }
 
 

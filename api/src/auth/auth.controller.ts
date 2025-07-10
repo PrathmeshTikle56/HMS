@@ -11,6 +11,7 @@ import {
   UploadedFile,
   HttpCode,
   Delete,
+  Query,
   HttpStatus
   
 } from '@nestjs/common';
@@ -124,9 +125,10 @@ export class AuthController {
   @UseGuards(JwtAuthGuard,RolesGuard,SelfOrRoleGuard)
   @Roles("HR","Admin","SuperAdmin")
   @Get('employees')
-  async getEmployeesOnly(@Req() req) {
+  async getEmployeesOnly(@Query('archived') archived: string, @Req() req) {
     const userRole=req?.user?.role
-    return this.authService.findEmployeesOnly(userRole);
+    const showDeleted = archived === 'true';
+    return this.authService.findEmployeesOnly(userRole,showDeleted);
   }
 
   @Get('profile-image/:id')
@@ -144,11 +146,11 @@ export class AuthController {
     return this.authService.resetPassword(dto.token, dto.newPassword);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SuperAdmin')
   @Delete('delete/:id')
   async softDeleteUser(@Param('id') id: string, @Req() req: any) {
-    const requester = req.user;
-    return this.authService.deleteUser(id, requester);
+    return this.authService.deleteUser(id);
   }
 
 
