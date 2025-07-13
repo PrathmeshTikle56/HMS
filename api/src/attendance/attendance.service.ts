@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  ForbiddenException, // ✅ Added this line
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Attendance, AttendanceDocument } from './schemas/attendance.schema';
@@ -14,32 +15,40 @@ import * as dayjs from 'dayjs';
 export class AttendanceService {
   constructor(
     @InjectModel(Attendance.name)
-    private attendanceModel: Model<AttendanceDocument>,
+    private readonly attendanceModel: Model<AttendanceDocument>,
   ) {}
 
+  // ✅ 1. Check-In
   async checkIn(user: JwtPayload, dto: CheckInDto) {
-    const todayStart = dayjs().startOf('day').toDate();
+  const todayStart = dayjs().startOf('day').toDate();
 
-    const alreadyCheckedIn = await this.attendanceModel.findOne({
-      userId: user.userId,
-      checkInTime: { $gte: todayStart },
-    });
+  const existing = await this.attendanceModel.findOne({
+    userId: user.userId,
+    checkInTime: { $gte: todayStart },
+  });
 
-    if (alreadyCheckedIn) {
-      throw new ConflictException('Already checked in today');
+  if (existing) {
+    if (!existing.checkedOut) {
+      return existing;
+    } else {
+      throw new ConflictException('Already checked out today. You cannot check in again.');
     }
-
-    return this.attendanceModel.create({
-      userId: user.userId,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
-      location: dto.location,
-      checkInTime: new Date(),
-      checkedOut: false,
-    });
   }
 
+  // ✅ Create new check-in only if no record exists for today
+  return this.attendanceModel.create({
+    userId: user.userId,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role,
+    location: dto.location,
+    checkInTime: new Date(),
+    checkedOut: false,
+  });
+}
+
+
+  // ✅ 2. Check-Out
   async checkOut(user: JwtPayload) {
     const todayStart = dayjs().startOf('day').toDate();
 
@@ -57,81 +66,52 @@ export class AttendanceService {
     entry.checkOutTime = now;
     entry.checkedOut = true;
 
-    const durationMs = new Date(entry.checkOutTime).getTime() - new Date(entry.checkInTime).getTime();
-    const hours = Math.floor(durationMs / (1000 * 60 * 60));
-    const minutes = Math.floor((durationMs / (1000 * 60)) % 60);
+    // ✅ Calculate total hours
+    const diffMs = now.getTime() - new Date(entry.checkInTime).getTime();
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
     entry.totalHours = `${hours}h ${minutes}m`;
 
     return entry.save();
   }
 
- 
+  // ✅ 3. Get today's attendance (used for timer resume)
+  async getTodayAttendance(user: JwtPayload) {
+    const todayStart = dayjs().startOf('day').toDate();
+
+    return this.attendanceModel.findOne({
+      userId: user.userId,
+      checkInTime: { $gte: todayStart },
+    });
+  }
+
+  // ✅ 4. Get full history
   async getMyAttendance(user: JwtPayload) {
-    return this.attendanceModel.find({ userId: user.userId }).sort({ checkInTime: -1 });
+    return this.attendanceModel
+      .find({ userId: user.userId })
+      .sort({ checkInTime: -1 });
   }
 
-  
-  async getAllAttendance() {
-    return this.attendanceModel.find().sort({ checkInTime: -1 });
-  }
+  // ✅ 5. Admin: Today’s all user attendance
+  async getTodayHistory(user: JwtPayload) {
+    const allowedRoles = ['Admin', 'SuperAdmin', 'HR'];
+    if (!allowedRoles.includes(user.role)) {
+      throw new ForbiddenException('Access denied');
+    }
 
-
-  async getAttendanceByUser(userId: string) {
-    return this.attendanceModel.find({ userId }).sort({ checkInTime: -1 });
-  }
-
-  async getAttendanceStats() {
     const todayStart = dayjs().startOf('day').toDate();
-    const todayEnd = dayjs().endOf('day').toDate();
-
-    const records = await this.attendanceModel.find({
-      checkInTime: { $gte: todayStart, $lte: todayEnd },
-    });
-
-    const present = records.length;
-    const leaves = records.filter((r) => r.leave === true).length;
-    const absent = 0; // For now (unless using a scheduler)
-
-    return {
-      presentCount: present,
-      leaveCount: leaves,
-      absentCount: absent,
-    };
-  }
-  async bulkUpload() {
-    // ⛔ Implement CSV/Excel parsing separately
-    return { message: 'Bulk upload not implemented yet' };
+    return this.attendanceModel
+      .find({ checkInTime: { $gte: todayStart } })
+      .sort({ checkInTime: -1 });
   }
 
-  async deleteAttendance(id: string) {
-    const result = await this.attendanceModel.findByIdAndDelete(id);
-    if (!result) throw new NotFoundException('Attendance not found');
-    return { message: 'Deleted successfully' };
-  }
-
-  async updateAttendance(id: string, dto: Partial<CheckInDto>) {
-    const updated = await this.attendanceModel.findByIdAndUpdate(id, { $set: dto }, { new: true });
-    if (!updated) throw new NotFoundException('Attendance not found');
-    return updated;
-  }
-
-  
-  async getTodaySummary() {
+  // ✅ 6. Explicit - get today's attendance for self
+  async getMyTodayAttendance(user: JwtPayload) {
     const todayStart = dayjs().startOf('day').toDate();
-    const todayEnd = dayjs().endOf('day').toDate();
 
-    const records = await this.attendanceModel.find({
-      checkInTime: { $gte: todayStart, $lte: todayEnd },
+    return this.attendanceModel.findOne({
+      userId: user.userId,
+      checkInTime: { $gte: todayStart },
     });
-
-    const present = records.length;
-    const leaves = records.filter((r) => r.leave === true).length;
-    const absent = 0; // You can calculate based on registered users
-
-    return {
-      presentCount: present,
-      leaveCount: leaves,
-      absentCount: absent,
-    };
   }
 }
